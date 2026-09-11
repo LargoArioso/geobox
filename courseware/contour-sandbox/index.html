@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>等高线 3D 沙盘 · GeoBox</title>
+  <link rel="stylesheet" href="./css/style.css" />
+  <script type="importmap">
+    { "imports": { "three": "./assets/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <header id="toolbar">
+    <div class="brand">
+      <span class="brand-word">等高线 3D 沙盘</span>
+      <span class="brand-sub">CONTOUR SANDBOX</span>
+    </div>
+    <div class="controls">
+      <label class="ctl">
+        <span>地形</span>
+        <select id="terrainType">
+          <option value="mountain">山地</option>
+          <option value="hills">丘陵</option>
+          <option value="basin">盆地</option>
+          <option value="valley">河谷</option>
+          <option value="ridge">山脊与山谷</option>
+        </select>
+      </label>
+      <label class="ctl">
+        <span>等高距 <b id="intervalVal">50 m</b></span>
+        <input type="range" id="interval" min="10" max="200" step="10" value="50" />
+      </label>
+      <button class="btn" id="regen">换一座山</button>
+      <button class="btn" id="importDem">导入真实 DEM</button>
+      <button class="btn toggle" id="profileMode">剖面测量</button>
+      <button class="btn toggle on" id="toggleContours">等高线投影</button>
+      <button class="btn" id="resetView">重置视角</button>
+      <button class="btn" id="exitBtn" hidden>退出</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <section id="view3d">
+      <div class="view-tag">3D 地形</div>
+      <div id="hint3d">拖动旋转 · 滚轮缩放 · 右键平移</div>
+    </section>
+    <section id="view2d">
+      <div class="view-tag">等高线地形图</div>
+      <canvas id="map2d"></canvas>
+      <div id="readout"></div>
+    </section>
+  </main>
+
+  <section id="profilePanel" hidden>
+    <div class="profile-head">
+      <span class="view-tag">地形剖面图</span>
+      <span id="profileInfo"></span>
+      <button class="btn small" id="clearProfile">清除剖面</button>
+    </div>
+    <canvas id="profileCanvas"></canvas>
+  </section>
+
+  <input type="file" id="fileFallback" accept=".asc,.txt" hidden />
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

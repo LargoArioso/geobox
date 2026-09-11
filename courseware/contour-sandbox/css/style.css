@@ -1,0 +1,163 @@
+/* 等高线 3D 沙盘 — 纸感白主题（与 GeoBox 课件库同设计语言） */
+:root {
+  --paper: #faf8f4;
+  --ink: #262626;
+  --ink-50: rgba(38, 38, 38, 0.5);
+  --ink-25: rgba(38, 38, 38, 0.25);
+  --ink-10: rgba(38, 38, 38, 0.1);
+  --accent: #f2e297;
+  --mono: 'Cascadia Mono', Consolas, monospace;
+  --sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ---------- 工具栏 ---------- */
+#toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--ink-10);
+  background: var(--paper);
+  z-index: 10;
+}
+
+.brand { display: flex; flex-direction: column; }
+.brand-word { font-size: 20px; font-weight: 700; letter-spacing: 0.1em; }
+.brand-sub { font-family: var(--mono); font-size: 11px; color: var(--ink-50); letter-spacing: 0.3em; }
+
+.controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.ctl { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--ink-50); }
+.ctl b { color: var(--ink); font-family: var(--mono); }
+
+select, input[type="range"] {
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 6px 8px;
+  border: 1px solid var(--ink-25);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+}
+
+input[type="range"] { width: 130px; accent-color: var(--ink); }
+
+.btn {
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--ink-10); }
+.btn.toggle.on { background: var(--ink); color: var(--paper); }
+.btn.small { padding: 6px 12px; font-size: 12px; }
+
+/* ---------- 主视图 ---------- */
+#stage { flex: 1; display: flex; min-height: 0; }
+
+#view3d { flex: 1.25; position: relative; background: linear-gradient(#eef4f8, #faf8f4); min-width: 0; }
+#view3d canvas { display: block; }
+
+#view2d {
+  flex: 1;
+  position: relative;
+  border-left: 1px solid var(--ink-10);
+  background: #fff;
+  min-width: 0;
+}
+#map2d {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.view-tag {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  color: var(--ink-50);
+  background: rgba(250, 248, 244, 0.85);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ink-10);
+  pointer-events: none;
+  z-index: 5;
+}
+
+#hint3d {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-50);
+  pointer-events: none;
+}
+
+#readout {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--ink-10);
+  padding: 6px 12px;
+  border-radius: 8px;
+  pointer-events: none;
+  display: none;
+}
+
+/* ---------- 剖面面板 ---------- */
+#profilePanel {
+  height: 200px;
+  border-top: 1px solid var(--ink-10);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px 0;
+}
+.profile-head .view-tag { position: static; }
+#profileInfo { font-family: var(--mono); font-size: 12px; color: var(--ink-50); flex: 1; }
+#profileCanvas { flex: 1; width: 100%; }
+
+@media (max-width: 900px) {
+  #stage { flex-direction: column; }
+  #view2d { border-left: none; border-top: 1px solid var(--ink-10); }
+}
