@@ -220,6 +220,9 @@ function draw2d() {
   if (map2d.width !== w * dpr) {
     map2d.width = w * dpr
     map2d.height = hgt * dpr
+    // canvas 是被替换元素，width 属性会改变固有尺寸撑破 absolute 布局，必须显式锁回 CSS 尺寸
+    map2d.style.width = `${w}px`
+    map2d.style.height = `${hgt}px`
   }
   ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx2d.clearRect(0, 0, w, hgt)
