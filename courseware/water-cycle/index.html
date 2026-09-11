@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>水循环动态示意图 · GeoBox</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <header id="toolbar">
+    <div class="brand">
+      <span class="brand-word">水循环动态示意图</span>
+      <span class="brand-sub">WATER CYCLE</span>
+    </div>
+    <div class="controls">
+      <div class="quick" id="cycleType">
+        <button class="btn small on" data-type="海陆间循环">海陆间循环</button>
+        <button class="btn small" data-type="海上内循环">海上内循环</button>
+        <button class="btn small" data-type="陆地内循环">陆地内循环</button>
+      </div>
+      <label class="ctl">
+        <span>太阳辐射 <b id="sunVal">强</b></span>
+        <input type="range" id="sun" min="0" max="2" step="1" value="2" />
+      </label>
+      <button class="btn toggle on" id="play">播放</button>
+      <label class="ctl slim">
+        <span>速度 <b id="speedVal">1×</b></span>
+        <input type="range" id="speed" min="0" max="3" step="1" value="1" />
+      </label>
+      <button class="btn" id="exitBtn" hidden>退出</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <section id="sceneWrap">
+      <div class="view-tag">水循环示意 · 点击右侧环节可单独高亮</div>
+      <canvas id="scene"></canvas>
+      <div id="sceneHint">蓝色粒子为液态水 · 白色粒子为水汽 · 太阳辐射驱动蒸发</div>
+    </section>
+
+    <section id="panel">
+      <div class="panel-title">水循环的环节</div>
+      <div id="processList"></div>
+
+      <div class="info-card" id="infoCard">
+        <div class="info-name" id="infoName">水循环</div>
+        <div class="info-text" id="infoText">点击上方任一环节，查看定义与作用。水循环按发生领域分为海陆间循环、海上内循环和陆地内循环，其中海陆间循环环节最多、最重要。</div>
+      </div>
+
+      <div class="teach-note">
+        <p class="note-title">水循环的地理意义</p>
+        <p>① 维持全球水量的<b>动态平衡</b>；</p>
+        <p>② 使陆地<b>淡水资源不断更新</b>；</p>
+        <p>③ 促进物质迁移与<b>能量转换</b>，是联系四大圈层的纽带；</p>
+        <p>④ 流水作用不断<b>塑造地表形态</b>。</p>
+        <p class="dim">人类活动主要影响地表径流环节（修水库、跨流域调水）；植树造林可增加下渗、涵养水源。</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
