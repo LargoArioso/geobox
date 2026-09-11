@@ -1,0 +1,10 @@
+{
+  "id": "demo-terrain",
+  "name": "示例课件·地形演示",
+  "author": "GeoBox",
+  "version": "1.0.0",
+  "subject": "地理",
+  "tags": ["示例", "地形"],
+  "entry": "index.html",
+  "permissions": ["file-import"]
+}
