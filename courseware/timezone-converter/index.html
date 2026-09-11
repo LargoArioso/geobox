@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>时区换算器 · GeoBox</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <header id="toolbar">
+    <div class="brand">
+      <span class="brand-word">时区换算器</span>
+      <span class="brand-sub">TIMEZONE CONVERTER</span>
+    </div>
+    <div class="controls">
+      <div class="quick" id="cityQuick">
+        <button class="btn small" data-city="北京">北京</button>
+        <button class="btn small" data-city="东京">东京</button>
+        <button class="btn small" data-city="伦敦">伦敦</button>
+        <button class="btn small" data-city="纽约">纽约</button>
+        <button class="btn small" data-city="悉尼">悉尼</button>
+        <button class="btn small" data-city="奥克兰">奥克兰</button>
+      </div>
+      <button class="btn toggle on" id="pickMode">点图选目的地</button>
+      <button class="btn" id="useNow">用当前时间</button>
+      <button class="btn" id="exitBtn" hidden>退出</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <section id="mapWrap">
+      <div class="view-tag">世界时区图 · Natural Earth 真实边界</div>
+      <canvas id="map"></canvas>
+      <div id="tooltip" hidden></div>
+      <div id="mapHint">悬停查看时区 · 点击设置目的地 · 虚线为理论时区界（每 15°）· 右侧红线为国际日期变更线</div>
+    </section>
+
+    <section id="panel">
+      <div class="tz-card from">
+        <div class="tz-label">出发地</div>
+        <div class="tz-name" id="fromName">北京</div>
+        <div class="tz-offset" id="fromOffset">UTC+08:00</div>
+        <div class="tz-clock" id="fromClock">12:00</div>
+        <div class="tz-date" id="fromDate">—</div>
+        <input type="range" id="timeSlider" min="0" max="1439" value="720" />
+        <div class="slider-hint">拖动调整出发地时间（左侧 0:00 → 右侧 23:59）</div>
+      </div>
+
+      <div class="diff-box">
+        <div class="diff-arrow">→</div>
+        <div>
+          <div class="diff-value" id="diffValue">相差 0 小时</div>
+          <div class="diff-note" id="diffNote">同一日期</div>
+        </div>
+      </div>
+
+      <div class="tz-card to">
+        <div class="tz-label">目的地</div>
+        <div class="tz-name" id="toName">伦敦</div>
+        <div class="tz-offset" id="toOffset">UTC+00:00</div>
+        <div class="tz-clock" id="toClock">04:00</div>
+        <div class="tz-date" id="toDate">—</div>
+      </div>
+
+      <div class="teach-note">
+        <p><b>东加西减</b>：目的地在出发地以东，时间加时差；以西则减。</p>
+        <p><b>国际日期变更线</b>：自西向东过线减一天，自东向西过线加一天。</p>
+        <p class="dim">地图为 Natural Earth 实测时区边界；时间为标准时，未计入夏令时。</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
