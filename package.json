@@ -10,7 +10,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "dist": "electron-vite build && electron-builder"
+    "dist": "electron-vite build && electron-builder",
+    "postinstall": "node scripts/copy-three.js"
   },
   "dependencies": {
     "jszip": "^3.10.1"
@@ -25,6 +26,7 @@
     "electron-vite": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "three": "^0.160.1",
     "typescript": "^5.6.3",
     "vite": "^7.0.0"
   }

@@ -15,7 +15,7 @@ Electron · React 18 · TypeScript · Vite（electron-vite）· Three.js（课�
 ## 开发
 
 ```bash
-npm install
+npm install   # 自动执行 postinstall：把 three.js 运行时复制到课件 assets（课件离线可用）
 npm run dev      # 开发模式（热更新）
 npm run build    # 构建
 npm run dist     # 打包 Windows 安装包（electron-builder）
@@ -51,7 +51,7 @@ await window.geobox.exit()
 ## 路线图
 
 - [x] P0 工程骨架：课件库 + 导入导出 + 沙箱播放器
-- [ ] P1 预置课件：等高线 3D 沙盘（含真实 DEM 导入）
+- [x] P1 预置课件：等高线 3D 沙盘（虚拟地形/实时等高线/剖面测量/DEM 导入，见 `courseware/contour-sandbox/`）
 - [ ] P2 预置课件扩充：地球运动模拟器、时区换算器、水循环
 - [ ] P3 v1.0 发布
 - [ ] P4 云端社区（另立项）

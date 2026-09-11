@@ -4,3 +4,6 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+# three.js 运行时由 postinstall（scripts/copy-three.js）生成，不入库
+courseware/*/assets/three.module.min.js
+courseware/*/assets/OrbitControls.js
