@@ -54,8 +54,8 @@ export default function App(): JSX.Element {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="logo">🌍</span>
-          <h1>GeoBox 地理课件舱</h1>
+          <span className="brand-word">GeoBox</span>
+          <span className="brand-sub">地理课件舱</span>
         </div>
         <div className="actions">
           <input
@@ -96,17 +96,19 @@ export default function App(): JSX.Element {
       <main className="grid">
         {filtered.length === 0 ? (
           <div className="empty">
-            <p className="empty-icon">📦</p>
-            <p>还没有课件</p>
+            <p className="empty-title">Empty Library</p>
             <p className="empty-hint">
-              点击「导入课件包」导入 .gpak 文件，或「从文件夹导入」你 vibe coding 的网页课件项目
+              还没有课件。点击「导入课件包」导入 .gpak 文件，
+              或「从文件夹导入」你 vibe coding 的网页课件项目——
+              补一个 manifest.json 即可上架。
             </p>
           </div>
         ) : (
-          filtered.map((p) => (
+          filtered.map((p, i) => (
             <PackageCard
               key={p.id}
               pkg={p}
+              index={i}
               onOpen={async () => {
                 const ok = await api.openPackage(p.id)
                 if (!ok) notify({ ok: false, message: '打开失败：课件文件缺失' })

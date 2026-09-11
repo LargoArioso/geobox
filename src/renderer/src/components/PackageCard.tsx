@@ -2,16 +2,18 @@ import type { PackageRecord } from '../../../shared/types'
 
 interface Props {
   pkg: PackageRecord
+  index: number
   onOpen: () => void
   onExport: () => void
   onDelete: () => void
 }
 
-export default function PackageCard({ pkg, onOpen, onExport, onDelete }: Props): JSX.Element {
+export default function PackageCard({ pkg, index, onOpen, onExport, onDelete }: Props): JSX.Element {
   return (
     <div className="card" onDoubleClick={onOpen}>
       <div className="card-cover">
-        <span className="cover-icon">🗺️</span>
+        <span className="cover-index">N°{String(index + 1).padStart(2, '0')}</span>
+        <span className="cover-subject">{pkg.subject || '地理'}</span>
         {pkg.source === 'builtin' && <span className="badge">预置</span>}
       </div>
       <div className="card-body">
