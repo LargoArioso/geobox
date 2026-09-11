@@ -1,6 +1,6 @@
 import { app } from 'electron'
 import { join, basename } from 'node:path'
-import { mkdirSync, existsSync, readFileSync, rmSync, cpSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { mkdirSync, existsSync, readFileSync, rmSync, copyFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import JSZip from 'jszip'
 import type { ImportResult, PackageManifest, PackageRecord } from '../shared/types'
@@ -10,6 +10,22 @@ export function packagesDir(): string {
   const dir = join(app.getPath('userData'), 'packages')
   mkdirSync(dir, { recursive: true })
   return dir
+}
+
+/**
+ * 递归复制目录。
+ * 注意：Electron 内嵌 Node 的 fs.cpSync 在 Windows 上对含非 ASCII 字符的目标路径
+ * 会静默失败（不报错也不复制），而 userData 路径含产品名「GeoBox 地理课件舱」，
+ * 因此必须逐文件复制（copyFileSync 无此问题）。
+ */
+function copyDirRecursive(src: string, dest: string): void {
+  mkdirSync(dest, { recursive: true })
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const s = join(src, entry.name)
+    const d = join(dest, entry.name)
+    if (entry.isDirectory()) copyDirRecursive(s, d)
+    else copyFileSync(s, d)
+  }
 }
 
 function readManifest(dir: string): PackageManifest {
@@ -34,7 +50,7 @@ function readManifest(dir: string): PackageManifest {
 }
 
 /** 从文件夹导入课件（自动生成缺失的 manifest） */
-export function importFromFolder(srcDir: string): ImportResult {
+export function importFromFolder(srcDir: string, source: 'builtin' | 'user' = 'user'): ImportResult {
   try {
     const manifest = readManifest(srcDir)
     if (!manifest.id || !manifest.name) {
@@ -46,14 +62,14 @@ export function importFromFolder(srcDir: string): ImportResult {
     }
     const destDir = join(packagesDir(), manifest.id)
     if (existsSync(destDir)) rmSync(destDir, { recursive: true, force: true })
-    cpSync(srcDir, destDir, { recursive: true })
+    copyDirRecursive(srcDir, destDir)
 
     const now = Date.now()
     const existing = getPackage(manifest.id)
     const record: PackageRecord = {
       ...manifest,
       entry,
-      source: 'user',
+      source,
       dir: destDir,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now
@@ -118,11 +134,12 @@ export async function exportPackage(id: string, destPath: string): Promise<Impor
   }
 }
 
-/** 删除课件（含磁盘文件与数据库记录） */
+/** 删除课件（含磁盘文件与数据库记录）；预置课件不可删除 */
 export function removePackage(id: string): ImportResult {
   try {
     const rec = getPackage(id)
     if (!rec) return { ok: false, message: '课件不存在' }
+    if (rec.source === 'builtin') return { ok: false, message: '预置课件不可删除，可导出后另行修改' }
     rmSync(rec.dir, { recursive: true, force: true })
     deletePackageRecord(id)
     return { ok: true, message: `已删除「${rec.name}」` }

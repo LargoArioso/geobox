@@ -38,9 +38,11 @@ export default function PackageCard({ pkg, index, onOpen, onExport, onDelete }: 
         <button className="btn" onClick={onExport}>
           导出
         </button>
-        <button className="btn danger" onClick={onDelete}>
-          删除
-        </button>
+        {pkg.source !== 'builtin' && (
+          <button className="btn danger" onClick={onDelete}>
+            删除
+          </button>
+        )}
       </div>
     </div>
   )

@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { app } from 'electron'
 import { join } from 'node:path'
 import { mkdirSync } from 'node:fs'
-import type { PackageRecord } from '../shared/types'
+import type { PackageRecord, ResourceRecord } from '../shared/types'
 
 let db: DatabaseSync
 
@@ -30,6 +30,16 @@ export function initDb(): void {
       key TEXT NOT NULL,
       value TEXT,
       PRIMARY KEY (package_id, key)
+    );
+    CREATE TABLE IF NOT EXISTS resources (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      kind TEXT DEFAULT '其他',
+      filename TEXT NOT NULL,
+      path TEXT NOT NULL,
+      builtin INTEGER DEFAULT 0,
+      size INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL
     );
   `)
 }
@@ -86,4 +96,38 @@ export function kvSet(packageId: string, key: string, value: string): void {
   db.prepare(
     'INSERT INTO kv (package_id, key, value) VALUES (?, ?, ?) ON CONFLICT(package_id, key) DO UPDATE SET value=excluded.value'
   ).run(packageId, key, value)
+}
+
+// ---------- 教学资料 ----------
+
+export function upsertResource(rec: ResourceRecord): void {
+  db.prepare(
+    `INSERT INTO resources (id, title, kind, filename, path, builtin, size, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       title=excluded.title, kind=excluded.kind, filename=excluded.filename,
+       path=excluded.path, builtin=excluded.builtin, size=excluded.size`
+  ).run(rec.id, rec.title, rec.kind, rec.filename, rec.path, rec.builtin ? 1 : 0, rec.size, rec.createdAt)
+}
+
+export function listResources(): ResourceRecord[] {
+  const rows = db.prepare('SELECT * FROM resources ORDER BY builtin DESC, created_at ASC').all() as any[]
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    kind: r.kind,
+    filename: r.filename,
+    path: r.path,
+    builtin: !!r.builtin,
+    size: r.size,
+    createdAt: r.created_at
+  }))
+}
+
+export function getResource(id: string): ResourceRecord | undefined {
+  return listResources().find((r) => r.id === id)
+}
+
+export function deleteResourceRecord(id: string): void {
+  db.prepare('DELETE FROM resources WHERE id = ?').run(id)
 }

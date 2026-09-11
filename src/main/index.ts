@@ -1,9 +1,11 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { join, extname } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
-import { initDb, listPackages } from './db'
+import { initDb, listPackages, listResources } from './db'
 import { importFromFolder, importFromZip, exportPackage, removePackage } from './packages'
 import { registerGpakScheme, handleGpakProtocol, openPlayer, registerPlayerIpc } from './player'
+import { seedBuiltinCourseware, seedBuiltinResources } from './builtin'
+import { addResourceDialog, openResource, removeResource } from './resources'
 import type { ImportResult } from '../shared/types'
 
 registerGpakScheme()
@@ -85,6 +87,15 @@ function registerLibraryIpc(): void {
 
   ipcMain.handle('pkg:delete', (_e, id: string) => removePackage(id))
   ipcMain.handle('pkg:open', (_e, id: string) => openPlayer(id))
+
+  // ---------- 教学资料 ----------
+  ipcMain.handle('res:list', () => listResources())
+  ipcMain.handle('res:addDialog', async () => {
+    if (!libraryWin) return { ok: false, message: '窗口不可用' }
+    return addResourceDialog(libraryWin)
+  })
+  ipcMain.handle('res:open', (_e, id: string) => openResource(id))
+  ipcMain.handle('res:delete', (_e, id: string) => removeResource(id))
 }
 
 // 单实例：双击 .gpak 时把文件交给已运行的实例
@@ -105,6 +116,8 @@ if (!gotLock) {
 
   app.whenReady().then(() => {
     initDb()
+    seedBuiltinCourseware()
+    seedBuiltinResources()
     handleGpakProtocol()
     registerLibraryIpc()
     registerPlayerIpc()

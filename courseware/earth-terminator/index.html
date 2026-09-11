@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>晨昏线模拟器 · GeoBox</title>
+  <link rel="stylesheet" href="./css/style.css" />
+  <script type="importmap">
+    { "imports": { "three": "./assets/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <header id="toolbar">
+    <div class="brand">
+      <span class="brand-word">晨昏线模拟器</span>
+      <span class="brand-sub">EARTH TERMINATOR</span>
+    </div>
+    <div class="controls">
+      <label class="ctl">
+        <span>日期 <b id="dateVal">6月21日</b></span>
+        <input type="range" id="doy" min="1" max="365" step="1" value="172" />
+      </label>
+      <div class="quick">
+        <button class="btn small" data-doy="80">春分</button>
+        <button class="btn small on" data-doy="172">夏至</button>
+        <button class="btn small" data-doy="266">秋分</button>
+        <button class="btn small" data-doy="355">冬至</button>
+      </div>
+      <label class="ctl">
+        <span>观测纬度 <b id="latVal">40°N</b></span>
+        <input type="range" id="lat" min="-90" max="90" step="1" value="40" />
+      </label>
+      <button class="btn toggle on" id="play">自转演示</button>
+      <label class="ctl slim">
+        <span>速度 <b id="speedVal">1×</b></span>
+        <input type="range" id="speed" min="0" max="5" step="1" value="1" />
+      </label>
+      <button class="btn" id="resetView">重置视角</button>
+      <button class="btn" id="exitBtn" hidden>退出</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <section id="view3d">
+      <div class="view-tag">3D 光照模型</div>
+      <div id="hint3d">拖动旋转 · 滚轮缩放 · 建议转到极点上方观察极昼极夜</div>
+    </section>
+    <section id="side">
+      <div id="view2d">
+        <div class="view-tag">光照侧视图</div>
+        <canvas id="map2d"></canvas>
+      </div>
+      <div id="dataPanel">
+        <div class="data-row"><span>太阳直射点</span><b id="dDecl">23.4°N</b></div>
+        <div class="data-row"><span>观测地昼长</span><b id="dDayLen">14 时 51 分</b></div>
+        <div class="data-row"><span>日出 / 日落（地方时）</span><b id="dRise">04:46 / 19:14</b></div>
+        <div class="data-row"><span>极昼范围</span><b id="dPolarDay">北极圈以内（66.5°N–90°N）</b></div>
+        <div class="data-row"><span>极夜范围</span><b id="dPolarNight">南极圈以内（66.5°S–90°S）</b></div>
+        <div class="data-row dim"><span>晨昏线性质</span><b>过地心的大圆 · 与太阳光线垂直 · 平分赤道</b></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

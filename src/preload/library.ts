@@ -11,5 +11,10 @@ contextBridge.exposeInMainWorld('geoboxLib', {
   openPackage: (id: string) => ipcRenderer.invoke('pkg:open', id),
   onImported: (cb: (result: unknown) => void) => {
     ipcRenderer.on('pkg:imported', (_e, result) => cb(result))
-  }
+  },
+  // 教学资料
+  listResources: () => ipcRenderer.invoke('res:list'),
+  addResources: () => ipcRenderer.invoke('res:addDialog'),
+  openResource: (id: string) => ipcRenderer.invoke('res:open', id),
+  deleteResource: (id: string) => ipcRenderer.invoke('res:delete', id)
 })

@@ -24,3 +24,15 @@ export interface ImportResult {
   message: string
   record?: PackageRecord
 }
+
+/** 教学资料（课标 / 教材 / 其他文档）记录 */
+export interface ResourceRecord {
+  id: string
+  title: string
+  kind: string // 课程标准 | 教材 | 其他
+  filename: string
+  path: string
+  builtin: boolean
+  size: number
+  createdAt: number
+}

@@ -1,0 +1,10 @@
+{
+  "id": "earth-terminator",
+  "name": "晨昏线模拟器",
+  "author": "GeoBox 官方",
+  "version": "1.0.0",
+  "subject": "地理",
+  "tags": ["地球运动", "晨昏线", "昼夜长短", "预置", "高中", "初中"],
+  "entry": "index.html",
+  "permissions": []
+}

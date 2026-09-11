@@ -1,4 +1,4 @@
-import type { ImportResult, PackageRecord } from '../../shared/types'
+import type { ImportResult, PackageRecord, ResourceRecord } from '../../shared/types'
 
 export interface GeoboxLibApi {
   list: () => Promise<PackageRecord[]>
@@ -9,6 +9,10 @@ export interface GeoboxLibApi {
   deletePackage: (id: string) => Promise<ImportResult>
   openPackage: (id: string) => Promise<boolean>
   onImported: (cb: (result: ImportResult) => void) => void
+  listResources: () => Promise<ResourceRecord[]>
+  addResources: () => Promise<ImportResult>
+  openResource: (id: string) => Promise<ImportResult>
+  deleteResource: (id: string) => Promise<ImportResult>
 }
 
 export const api = (window as any).geoboxLib as GeoboxLibApi

@@ -3,10 +3,11 @@ const { copyFileSync, mkdirSync, existsSync } = require('node:fs')
 const { join } = require('node:path')
 
 const root = join(__dirname, '..')
-const targets = [
-  ['node_modules/three/build/three.module.min.js', 'courseware/contour-sandbox/assets/three.module.min.js'],
-  ['node_modules/three/examples/jsm/controls/OrbitControls.js', 'courseware/contour-sandbox/assets/OrbitControls.js']
-]
+const coursewares = ['contour-sandbox', 'earth-terminator']
+const targets = coursewares.flatMap((cw) => [
+  ['node_modules/three/build/three.module.min.js', `courseware/${cw}/assets/three.module.min.js`],
+  ['node_modules/three/examples/jsm/controls/OrbitControls.js', `courseware/${cw}/assets/OrbitControls.js`]
+])
 
 for (const [src, dest] of targets) {
   const s = join(root, src)

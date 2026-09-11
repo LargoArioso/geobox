@@ -364,16 +364,154 @@ body {
   box-shadow: 0 10px 30px var(--ink-25);
 }
 
+/* ---------- 页签：课件 / 资料 ---------- */
+.tabs {
+  display: flex;
+  gap: 26px;
+  align-items: baseline;
+  padding-bottom: 4px;
+}
+
+.tab {
+  font-family: var(--mono);
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: var(--ink-50);
+  cursor: pointer;
+  padding: 4px 2px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--ink-25);
+  margin-left: 4px;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.tab.active em {
+  color: var(--ink-50);
+}
+
+/* ---------- 资料列表 ---------- */
+.resources {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 32px 48px;
+  display: flex;
+  flex-direction: column;
+}
+
+.res-list {
+  display: flex;
+  flex-direction: column;
+  max-width: 860px;
+}
+
+.res-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 6px;
+  border-bottom: 1px solid var(--ink-10);
+  transition: background 0.15s;
+}
+
+.res-row:hover {
+  background: rgba(242, 226, 151, 0.18);
+}
+
+.res-icon {
+  font-family: var(--mono);
+  font-size: 20px;
+  width: 36px;
+  text-align: center;
+  color: var(--ink-50);
+  flex-shrink: 0;
+}
+
+.res-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.res-title {
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-meta {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-50);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge.inline {
+  position: static;
+  padding: 1px 8px;
+  font-size: 10px;
+}
+
+.res-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.res-actions .btn {
+  padding: 8px 16px;
+}
+
+.res-actions .btn::before {
+  display: none;
+}
+
+.res-actions .btn:hover {
+  padding-left: 16px;
+}
+
+.res-footnote {
+  margin-top: 26px;
+  max-width: 860px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--ink-50);
+  border-top: 1px dotted var(--ink-25);
+  padding-top: 12px;
+}
+
 /* 滚动条克制化 */
-.grid::-webkit-scrollbar {
+.grid::-webkit-scrollbar,
+.resources::-webkit-scrollbar {
   width: 8px;
 }
 
-.grid::-webkit-scrollbar-thumb {
+.grid::-webkit-scrollbar-thumb,
+.resources::-webkit-scrollbar-thumb {
   background: var(--ink-10);
   border-radius: 4px;
 }
 
-.grid::-webkit-scrollbar-thumb:hover {
+.grid::-webkit-scrollbar-thumb:hover,
+.resources::-webkit-scrollbar-thumb:hover {
   background: var(--ink-25);
 }

@@ -1,0 +1,192 @@
+/* 晨昏线模拟器 — 纸感白主题（与 GeoBox 课件库一致） */
+:root {
+  --paper: #faf8f4;
+  --ink: #262626;
+  --ink-50: rgba(38, 38, 38, 0.5);
+  --ink-25: rgba(38, 38, 38, 0.25);
+  --ink-10: rgba(38, 38, 38, 0.1);
+  --accent: #f2e297;
+  --mono: 'Cascadia Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  --sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  user-select: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 工具栏 ---------- */
+#toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--ink-10);
+  flex-wrap: wrap;
+}
+
+.brand { display: flex; flex-direction: column; gap: 2px; }
+
+.brand-word {
+  font-family: var(--mono);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+}
+
+.brand-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--ink-50);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ctl {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--ink-50);
+}
+
+.ctl span b { color: var(--ink); font-family: var(--mono); font-weight: 600; }
+
+.ctl input[type='range'] {
+  width: 150px;
+  accent-color: var(--ink);
+}
+
+.ctl.slim input[type='range'] { width: 80px; }
+
+.quick { display: flex; gap: 6px; }
+
+.btn {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.05em;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.btn:hover { background: var(--ink-10); }
+
+.btn.small { padding: 6px 10px; font-size: 12px; border-color: var(--ink-25); }
+
+.btn.small.on,
+.btn.toggle.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ---------- 主舞台 ---------- */
+#stage {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#view3d {
+  flex: 1.35;
+  position: relative;
+  min-width: 0;
+}
+
+#view3d canvas { position: absolute; inset: 0; display: block; }
+
+#side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-left: 1px solid var(--ink-10);
+}
+
+#view2d {
+  flex: 1.2;
+  position: relative;
+  min-height: 0;
+}
+
+#map2d { position: absolute; inset: 0; }
+
+.view-tag {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--ink-50);
+  background: rgba(250, 248, 244, 0.85);
+  padding: 3px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#hint3d {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  font-size: 12px;
+  color: var(--ink-50);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ---------- 数据面板 ---------- */
+#dataPanel {
+  flex: 1;
+  border-top: 1px solid var(--ink-10);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--ink-10);
+}
+
+.data-row span { color: var(--ink-50); flex-shrink: 0; }
+
+.data-row b {
+  font-family: var(--mono);
+  font-weight: 600;
+  text-align: right;
+}
+
+.data-row.dim b { font-weight: 400; font-size: 11.5px; color: var(--ink-50); }

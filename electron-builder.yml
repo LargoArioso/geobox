@@ -5,6 +5,11 @@ directories:
 files:
   - out/**
   - package.json
+extraResources:
+  - from: courseware
+    to: courseware
+  - from: resources
+    to: resources
 win:
   target:
     - nsis
