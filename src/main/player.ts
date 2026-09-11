@@ -22,9 +22,11 @@ export function registerGpakScheme(): void {
 export function handleGpakProtocol(): void {
   protocol.handle('gpak', (request) => {
     const url = new URL(request.url)
-    const rel = decodeURIComponent(url.pathname).replace(/^\/+/, '')
-    const id = url.host
-    const filePath = normalize(join(packagesDir(), id, rel || 'index.html'))
+    // host 固定为 pkg，课件 id 是路径第一段（host 会被 URL 规范化，不能用来承载 id）
+    const segs = decodeURIComponent(url.pathname).replace(/^\/+/, '').split('/')
+    const id = segs.shift() ?? ''
+    const rel = segs.join('/') || 'index.html'
+    const filePath = normalize(join(packagesDir(), id, rel))
     // 防目录穿越
     if (!filePath.startsWith(normalize(packagesDir()))) {
       return new Response('Forbidden', { status: 403 })
