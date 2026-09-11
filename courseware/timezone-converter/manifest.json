@@ -2,7 +2,7 @@
   "id": "timezone-converter",
   "name": "时区换算器",
   "author": "GeoBox 官方",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "subject": "地理",
   "tags": ["时区", "区时换算", "日界线", "预置", "初中", "高中"],
   "entry": "index.html",

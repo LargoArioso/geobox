@@ -30,13 +30,32 @@ const state = {
   hover: null
 }
 
-// ---------- 时区配色：西经蓝、东经橙，偏移越大越深 ----------
+// ---------- 时区配色：西经蓝、东经橙，偏移越大越深（半透明，透出真实地图） ----------
 function zoneColor(offset, strong = false) {
   const a = Math.min(Math.abs(offset), 14) / 14
   const h = offset >= 0 ? 32 : 212
   const s = 40 + a * 25
   const l = strong ? 100 - (18 + a * 40) : 100 - (6 + a * 22)
-  return `hsl(${h}, ${s}%, ${l}%)`
+  return `hsla(${h}, ${s}%, ${l}%, ${strong ? 0.72 : 0.42})`
+}
+
+// ---------- 真实世界地图底图（Natural Earth II，等距圆柱投影） ----------
+const earthImg = new Image()
+let earthReady = false
+earthImg.onload = () => {
+  earthReady = true
+  draw()
+}
+earthImg.src = './data/earth.jpg'
+
+function drawEarthBase(w, h) {
+  if (!earthReady) return
+  const [x1, y1] = lonLatToXY(-180, 90)
+  const [x2, y2] = lonLatToXY(180, -90)
+  ctx.drawImage(earthImg, x1, y1, x2 - x1, y2 - y1)
+  // 纸感柔光罩，让叠加的文字与边界更清晰
+  ctx.fillStyle = 'rgba(250,248,244,0.18)'
+  ctx.fillRect(x1, y1, x2 - x1, y2 - y1)
 }
 
 function fmtOffset(offset) {
@@ -139,6 +158,9 @@ function draw() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, w, h)
   fitProjection(w, h)
+
+  // 真实世界地图底图
+  drawEarthBase(w, h)
 
   // 理论时区界（每 15° 虚线）+ 纬线
   ctx.strokeStyle = 'rgba(38,38,38,0.14)'

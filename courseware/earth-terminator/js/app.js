@@ -1,16 +1,20 @@
-// 晨昏线模拟器 — 主程序
+// 晨昏线模拟器 — 主程序（真实地表纹理 + 自转/公转运动演示）
 import * as THREE from 'three'
 import { OrbitControls } from '../assets/OrbitControls.js'
 import { sunDeclination, dateLabel, latLabel, hmLabel, clockLabel, dayLength, polarRanges } from './astro.js'
 
 const R = 30 // 地球半径（场景单位）
+const ORBIT = R * 4 // 公转轨道半径（公转视角）
+const TILT = (23.44 * Math.PI) / 180 // 地轴倾角
 const $ = (id) => document.getElementById(id)
 
 const state = {
   doy: 172, // 夏至
+  doyFloat: 172,
   lat: 40,
   playing: true,
-  speed: 1
+  speed: 1,
+  mode: 'closeup' // 'closeup' 特写视角 | 'orbit' 公转视角
 }
 
 // ---------- Three.js 场景 ----------
@@ -20,62 +24,113 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 view3d.appendChild(renderer.domElement)
 
 const scene = new THREE.Scene()
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000)
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 4000)
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = true
 controls.dampingFactor = 0.08
 
 function resetCamera() {
-  camera.position.set(70, 26, 55)
-  controls.target.set(0, 0, 0)
+  if (state.mode === 'orbit') {
+    camera.position.set(0, ORBIT * 1.35, ORBIT * 1.3)
+    controls.target.set(0, 0, 0)
+  } else {
+    camera.position.set(70, 26, 55)
+    controls.target.set(0, 0, 0)
+  }
   controls.update()
 }
 resetCamera()
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.9))
-const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.4)
+scene.add(new THREE.AmbientLight(0xffffff, 0.55))
+const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.6)
 scene.add(sunLight)
 
-// ---------- 太阳方向 ----------
-function sunDir() {
-  const d = (sunDeclination(state.doy) * Math.PI) / 180
+// ---------- 太阳赤纬 / 轨道角 ----------
+function declRad() {
+  return (sunDeclination(state.doy) * Math.PI) / 180
+}
+/** 轨道角：夏至 θ=0，沿公转方向递增（从北极上空看逆时针） */
+function orbitTheta() {
+  return ((2 * Math.PI) / 365) * (state.doyFloat - 172)
+}
+/** 地球中心世界坐标（θ=0 夏至在轨道远侧 -Z，横向居中构图） */
+function earthWorldPos() {
+  if (state.mode === 'orbit') {
+    const t = orbitTheta()
+    return new THREE.Vector3(ORBIT * Math.sin(t), 0, -ORBIT * Math.cos(t))
+  }
+  return new THREE.Vector3(0, 0, 0)
+}
+/** 世界系中「地心 → 太阳」方向 */
+function worldSunDir() {
+  if (state.mode === 'orbit') {
+    return earthWorldPos().multiplyScalar(-1).normalize()
+  }
+  const d = declRad()
   return new THREE.Vector3(Math.cos(d), Math.sin(d), 0).normalize()
 }
+/** 太阳中心世界坐标 */
+function sunWorldPos() {
+  if (state.mode === 'orbit') return new THREE.Vector3(0, 0, 0)
+  return worldSunDir().multiplyScalar(R * 3.4)
+}
 
-// ---------- 地球（昼夜着色 ShaderMaterial） ----------
+// ---------- 地球（真实纹理 + 昼夜着色 ShaderMaterial） ----------
 const earthUniforms = {
-  sunDir: { value: sunDir() }
+  sunDir: { value: worldSunDir() },
+  map: { value: null },
+  useMap: { value: 0 }
 }
 const earthMat = new THREE.ShaderMaterial({
   uniforms: earthUniforms,
   vertexShader: /* glsl */ `
     varying vec3 vWorldNormal;
+    varying vec2 vUv;
     void main() {
       vWorldNormal = normalize(mat3(modelMatrix) * normal);
+      vUv = uv;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
   `,
   fragmentShader: /* glsl */ `
     uniform vec3 sunDir;
+    uniform sampler2D map;
+    uniform float useMap;
     varying vec3 vWorldNormal;
+    varying vec2 vUv;
     void main() {
       float d = dot(normalize(vWorldNormal), normalize(sunDir));
       float k = smoothstep(-0.06, 0.06, d);
-      vec3 day = vec3(0.87, 0.91, 0.94);     // 昼半球：淡蓝白
-      vec3 night = vec3(0.13, 0.18, 0.30);   // 夜半球：深靛蓝
+      vec3 tex = texture2D(map, vUv).rgb;
+      vec3 dayPlain = vec3(0.87, 0.91, 0.94);
+      vec3 dayCol = mix(dayPlain, tex * 1.06, useMap);
+      vec3 nightPlain = vec3(0.13, 0.18, 0.30);
+      vec3 nightCol = mix(nightPlain, tex * vec3(0.16, 0.20, 0.34), useMap);
       vec3 glow = vec3(0.98, 0.62, 0.30);    // 晨昏线附近暖色过渡带
-      vec3 col = mix(night, day, k);
+      vec3 col = mix(nightCol, dayCol, k);
       float band = 1.0 - smoothstep(0.0, 0.18, abs(d));
-      col = mix(col, glow, band * 0.35);
+      col = mix(col, glow, band * 0.30);
       gl_FragColor = vec4(col, 1.0);
     }
   `
 })
-const earthGroup = new THREE.Group() // 随自转旋转的部分
-scene.add(earthGroup)
-earthGroup.add(new THREE.Mesh(new THREE.SphereGeometry(R, 96, 64), earthMat))
 
-// ---------- 经纬网（随地球旋转） ----------
+new THREE.TextureLoader().load('./assets/earth.jpg', (tex) => {
+  tex.colorSpace = THREE.SRGBColorSpace
+  earthUniforms.map.value = tex
+  earthUniforms.useMap.value = 1
+})
+
+// 层级：位置组（公转）→ 倾斜组（地轴方向固定）→ 自转组（每天转圈）
+const earthPosGroup = new THREE.Group()
+const earthTiltGroup = new THREE.Group()
+const earthSpinGroup = new THREE.Group()
+scene.add(earthPosGroup)
+earthPosGroup.add(earthTiltGroup)
+earthTiltGroup.add(earthSpinGroup)
+earthSpinGroup.add(new THREE.Mesh(new THREE.SphereGeometry(R, 96, 64), earthMat))
+
+// ---------- 经纬网（随地球自转） ----------
 function circlePoints(radius, y, segments = 128) {
   const pts = []
   for (let i = 0; i <= segments; i++) {
@@ -89,8 +144,8 @@ function addParallel(latDeg, color, width = 1, scale = 1.002) {
   const phi = (latDeg * Math.PI) / 180
   const pts = circlePoints(R * Math.cos(phi) * scale, R * Math.sin(phi) * scale)
   const geo = new THREE.BufferGeometry().setFromPoints(pts)
-  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: width > 1 ? 0.9 : 0.45 }))
-  earthGroup.add(line)
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: width > 1 ? 0.85 : 0.3 }))
+  earthSpinGroup.add(line)
   return line
 }
 
@@ -104,31 +159,32 @@ function addMeridian(lonDeg, color) {
     pts.push(v.multiplyScalar(1.002))
   }
   const geo = new THREE.BufferGeometry().setFromPoints(pts)
-  earthGroup.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.45 })))
+  earthSpinGroup.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.3 })))
 }
 
-for (let lon = 0; lon < 180; lon += 30) addMeridian(lon, 0x5a6a7a)
-for (let lat = -60; lat <= 60; lat += 30) if (lat !== 0) addParallel(lat, 0x5a6a7a)
-addParallel(0, 0x2e4a5e, 2) // 赤道
+for (let lon = 0; lon < 180; lon += 30) addMeridian(lon, 0x3a4a5a)
+for (let lat = -60; lat <= 60; lat += 30) if (lat !== 0) addParallel(lat, 0x3a4a5a)
+addParallel(0, 0x16324a, 2) // 赤道
 addParallel(23.44, 0xc8963c, 2) // 北回归线
 addParallel(-23.44, 0xc8963c, 2) // 南回归线
 addParallel(66.56, 0x7a5aa0, 2) // 北极圈
 addParallel(-66.56, 0x7a5aa0, 2) // 南极圈
 
-// 地轴
-{
-  const geo = new THREE.BufferGeometry().setFromPoints([
+// 地轴（随倾斜组，不随自转）
+const axisLine = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0, -R * 1.35, 0),
     new THREE.Vector3(0, R * 1.35, 0)
-  ])
-  earthGroup.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0x262626, transparent: true, opacity: 0.6 })))
-}
+  ]),
+  new THREE.LineBasicMaterial({ color: 0x262626, transparent: true, opacity: 0.6 })
+)
+earthTiltGroup.add(axisLine)
 
 // 观测纬度高亮环（红色，随滑杆更新）
 let latRing = null
 function updateLatRing() {
   if (latRing) {
-    earthGroup.remove(latRing)
+    earthSpinGroup.remove(latRing)
     latRing.geometry.dispose()
     latRing.material.dispose()
   }
@@ -138,75 +194,151 @@ function updateLatRing() {
     new THREE.BufferGeometry().setFromPoints(pts),
     new THREE.LineBasicMaterial({ color: 0xd42a1e })
   )
-  earthGroup.add(latRing)
+  earthSpinGroup.add(latRing)
 }
 updateLatRing()
 
-// ---------- 不随自转的部分：晨昏线环 / 太阳 / 直射点 ----------
-const staticGroup = new THREE.Group()
-scene.add(staticGroup)
+// ---------- 世界系静态件：晨昏线环 / 直射点 / 太阳 / 光线 / 轨道 ----------
+const worldGroup = new THREE.Group()
+scene.add(worldGroup)
 
-let terminatorTube = null
-let subsolarMarker = null
-let sunMesh = null
-let sunRay = null
-
-function rebuildSunGeometry() {
-  for (const obj of [terminatorTube, subsolarMarker, sunMesh, sunRay]) {
-    if (obj) {
-      staticGroup.remove(obj)
-      obj.geometry?.dispose()
-      obj.material?.dispose()
-    }
-  }
-  const sd = sunDir()
-
-  // 晨昏线：过地心、垂直于太阳光线的大圆（红色圆管，大屏可见）
-  const u = new THREE.Vector3(0, 1, 0).cross(sd).normalize()
-  const v = sd.clone().cross(u).normalize()
+// 晨昏线圆管：在 XY 平面建好，用四元数对准阳光方向（避免每帧重建几何体）
+const terminatorGroup = new THREE.Group()
+{
   const pts = []
   for (let i = 0; i <= 180; i++) {
     const t = (i / 180) * Math.PI * 2
-    pts.push(
-      u.clone().multiplyScalar(Math.cos(t) * R * 1.004).add(v.clone().multiplyScalar(Math.sin(t) * R * 1.004))
-    )
+    pts.push(new THREE.Vector3(Math.cos(t) * R * 1.004, Math.sin(t) * R * 1.004, 0))
   }
   const curve = new THREE.CatmullRomCurve3(pts, true)
-  terminatorTube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 180, R * 0.012, 8, true),
-    new THREE.MeshBasicMaterial({ color: 0xd42a1e })
+  terminatorGroup.add(
+    new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 180, R * 0.012, 8, true),
+      new THREE.MeshBasicMaterial({ color: 0xd42a1e })
+    )
   )
-  staticGroup.add(terminatorTube)
-
-  // 太阳直射点标记
-  subsolarMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(R * 0.035, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0xf2b01e })
-  )
-  subsolarMarker.position.copy(sd.clone().multiplyScalar(R * 1.01))
-  staticGroup.add(subsolarMarker)
-
-  // 太阳本体与光线方向线
-  sunMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(R * 0.22, 24, 24),
-    new THREE.MeshBasicMaterial({ color: 0xf7c948 })
-  )
-  sunMesh.position.copy(sd.clone().multiplyScalar(R * 3.4))
-  staticGroup.add(sunMesh)
-
-  sunRay = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([
-      sd.clone().multiplyScalar(R * 3.1),
-      sd.clone().multiplyScalar(R * 1.15)
-    ]),
-    new THREE.LineBasicMaterial({ color: 0xf2b01e })
-  )
-  staticGroup.add(sunRay)
-
-  sunLight.position.copy(sd.clone().multiplyScalar(200))
-  earthUniforms.sunDir.value = sd
 }
-rebuildSunGeometry()
+worldGroup.add(terminatorGroup)
+
+const subsolarMarker = new THREE.Mesh(
+  new THREE.SphereGeometry(R * 0.035, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0xf2b01e })
+)
+worldGroup.add(subsolarMarker)
+
+const sunMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 24, 24),
+  new THREE.MeshBasicMaterial({ color: 0xf7c948 })
+)
+worldGroup.add(sunMesh)
+
+const sunRayGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1, 0, 0)])
+const sunRay = new THREE.Line(sunRayGeo, new THREE.LineBasicMaterial({ color: 0xf2b01e }))
+worldGroup.add(sunRay)
+
+// 公转轨道环 + 二分二至标记（仅公转视角可见）
+const orbitGroup = new THREE.Group()
+orbitGroup.visible = false
+scene.add(orbitGroup)
+{
+  const pts = []
+  for (let i = 0; i <= 180; i++) {
+    const t = (i / 180) * Math.PI * 2
+    pts.push(new THREE.Vector3(Math.cos(t) * ORBIT, 0, -Math.sin(t) * ORBIT))
+  }
+  orbitGroup.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: 0x8a8a8a, transparent: true, opacity: 0.55 })
+    )
+  )
+}
+
+function makeTextSprite(text) {
+  const c = document.createElement('canvas')
+  c.width = 256
+  c.height = 96
+  const g = c.getContext('2d')
+  g.font = 'bold 44px "PingFang SC", "Microsoft YaHei", sans-serif'
+  g.textAlign = 'center'
+  g.fillStyle = '#262626'
+  g.fillText(text, 128, 58)
+  const tex = new THREE.CanvasTexture(c)
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }))
+  sp.scale.set(R * 0.9, R * 0.34, 1)
+  return sp
+}
+
+// 二分二至标记：doy → 轨道位置 + 中文标签
+for (const [doy, name] of [[172, '夏至'], [266, '秋分'], [355, '冬至'], [80, '春分']]) {
+  const t = ((2 * Math.PI) / 365) * (doy - 172)
+  const p = new THREE.Vector3(Math.sin(t) * ORBIT, 0, -Math.cos(t) * ORBIT)
+  const dot = new THREE.Mesh(
+    new THREE.SphereGeometry(R * 0.05, 12, 12),
+    new THREE.MeshBasicMaterial({ color: 0xc8963c })
+  )
+  dot.position.copy(p)
+  orbitGroup.add(dot)
+  const label = makeTextSprite(name)
+  label.position.copy(p).add(new THREE.Vector3(0, R * 0.35, 0))
+  orbitGroup.add(label)
+}
+
+// 公转方向箭头（轨道切线方向的小锥体，夏至点附近）
+{
+  const t0 = ((2 * Math.PI) / 365) * 40
+  const p = new THREE.Vector3(Math.sin(t0) * ORBIT, 0, -Math.cos(t0) * ORBIT)
+  const tangent = new THREE.Vector3(Math.cos(t0), 0, Math.sin(t0))
+  const cone = new THREE.Mesh(
+    new THREE.ConeGeometry(R * 0.09, R * 0.3, 12),
+    new THREE.MeshBasicMaterial({ color: 0x8a8a8a })
+  )
+  cone.position.copy(p)
+  cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent)
+  orbitGroup.add(cone)
+  const label = makeTextSprite('公转方向')
+  label.position.copy(p).add(new THREE.Vector3(0, R * 0.35, 0))
+  orbitGroup.add(label)
+}
+
+/** 每帧更新世界系几何（廉价：只动位置/四元数/端点） */
+const _q = new THREE.Quaternion()
+const _zAxis = new THREE.Vector3(0, 0, 1)
+function updateWorldGeometry() {
+  const ePos = earthWorldPos()
+  const sd = worldSunDir()
+  const sPos = sunWorldPos()
+
+  earthPosGroup.position.copy(ePos)
+  // 地轴倾斜：特写视角轴竖直；公转视角轴固定指向 (0, cosTilt, sinTilt)，方向不随公转改变
+  if (state.mode === 'orbit') {
+    _q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, Math.cos(TILT), Math.sin(TILT)))
+    earthTiltGroup.quaternion.copy(_q)
+  } else {
+    earthTiltGroup.quaternion.identity()
+  }
+
+  // 晨昏线环：圆面法线对准阳光方向
+  terminatorGroup.position.copy(ePos)
+  terminatorGroup.quaternion.copy(_q.setFromUnitVectors(_zAxis, sd))
+
+  subsolarMarker.position.copy(ePos).addScaledVector(sd, R * 1.01)
+
+  sunMesh.position.copy(sPos)
+  const sunScale = state.mode === 'orbit' ? R * 0.55 : R * 0.22
+  sunMesh.scale.setScalar(sunScale)
+
+  // 光线：太阳边缘 → 地球边缘
+  const p0 = sPos.clone().addScaledVector(sd, -sunScale * 1.05)
+  const p1 = ePos.clone().addScaledVector(sd, R * 1.12)
+  const attr = sunRayGeo.getAttribute('position')
+  attr.setXYZ(0, p0.x, p0.y, p0.z)
+  attr.setXYZ(1, p1.x, p1.y, p1.z)
+  attr.needsUpdate = true
+
+  sunLight.position.copy(sPos.clone().sub(ePos).normalize().multiplyScalar(300).add(ePos))
+  earthUniforms.sunDir.value.copy(sd)
+}
 
 // ---------- 2D 光照侧视图 ----------
 const map2d = $('map2d')
@@ -392,18 +524,18 @@ function updatePanel() {
 // ---------- UI 事件 ----------
 function setDoy(doy) {
   state.doy = Math.max(1, Math.min(365, Math.round(doy)))
+  state.doyFloat = state.doy
   $('doy').value = String(state.doy)
   $('dateVal').textContent = dateLabel(state.doy)
-  document.querySelectorAll('.quick .btn').forEach((b) => {
+  document.querySelectorAll('#dateQuick .btn').forEach((b) => {
     b.classList.toggle('on', parseInt(b.dataset.doy, 10) === state.doy)
   })
-  rebuildSunGeometry()
   draw2d()
   updatePanel()
 }
 
 $('doy').addEventListener('input', (e) => setDoy(parseInt(e.target.value, 10)))
-document.querySelectorAll('.quick .btn').forEach((b) => {
+document.querySelectorAll('#dateQuick .btn').forEach((b) => {
   b.addEventListener('click', () => setDoy(parseInt(b.dataset.doy, 10)))
 })
 
@@ -426,6 +558,23 @@ $('speed').addEventListener('input', (e) => {
   const i = parseInt(e.target.value, 10)
   state.speed = speedValues[i]
   $('speedVal').textContent = speedNames[i]
+})
+
+// 视角切换：特写 / 公转
+function setMode(mode) {
+  state.mode = mode
+  orbitGroup.visible = mode === 'orbit'
+  document.querySelectorAll('#viewMode .btn').forEach((b) => {
+    b.classList.toggle('on', b.dataset.mode === mode)
+  })
+  $('hint3d').textContent =
+    mode === 'orbit'
+      ? '公转演示：地轴倾斜方向保持不变，直射点随公转移动 · 拖动旋转 · 滚轮缩放'
+      : '拖动旋转 · 滚轮缩放 · 建议转到极点上方观察极昼极夜'
+  resetCamera()
+}
+document.querySelectorAll('#viewMode .btn').forEach((b) => {
+  b.addEventListener('click', () => setMode(b.dataset.mode))
 })
 
 $('resetView').addEventListener('click', resetCamera)
@@ -452,6 +601,7 @@ new ResizeObserver(() => draw2d()).observe($('view2d'))
 
 // ---------- 启动 ----------
 setDoy(state.doy)
+setMode('closeup')
 onResize()
 requestAnimationFrame(() => onResize())
 setTimeout(() => onResize(), 300)
@@ -459,7 +609,27 @@ setTimeout(() => onResize(), 300)
 const clock = new THREE.Clock()
 renderer.setAnimationLoop(() => {
   const dt = clock.getDelta()
-  if (state.playing) earthGroup.rotation.y += dt * state.speed * 0.35
+  if (state.playing) {
+    // 自转：两种视角都在转
+    earthSpinGroup.rotation.y += dt * state.speed * 0.35
+    // 公转：公转视角下日期自动推进（1× 约 6 天/秒，一年约 1 分钟）
+    if (state.mode === 'orbit' && state.speed > 0) {
+      state.doyFloat += dt * state.speed * 6
+      if (state.doyFloat > 365) state.doyFloat -= 365
+      const d = Math.round(state.doyFloat)
+      if (d !== state.doy) {
+        state.doy = d
+        $('doy').value = String(d)
+        $('dateVal').textContent = dateLabel(d)
+        document.querySelectorAll('#dateQuick .btn').forEach((b) => {
+          b.classList.toggle('on', parseInt(b.dataset.doy, 10) === d)
+        })
+        draw2d()
+        updatePanel()
+      }
+    }
+  }
+  updateWorldGeometry()
   controls.update()
   renderer.render(scene, camera)
 })

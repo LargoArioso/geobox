@@ -16,11 +16,15 @@
       <span class="brand-sub">EARTH TERMINATOR</span>
     </div>
     <div class="controls">
+      <div class="quick" id="viewMode">
+        <button class="btn small on" data-mode="closeup">特写视角</button>
+        <button class="btn small" data-mode="orbit">公转视角</button>
+      </div>
       <label class="ctl">
         <span>日期 <b id="dateVal">6月21日</b></span>
         <input type="range" id="doy" min="1" max="365" step="1" value="172" />
       </label>
-      <div class="quick">
+      <div class="quick" id="dateQuick">
         <button class="btn small" data-doy="80">春分</button>
         <button class="btn small on" data-doy="172">夏至</button>
         <button class="btn small" data-doy="266">秋分</button>
@@ -30,7 +34,7 @@
         <span>观测纬度 <b id="latVal">40°N</b></span>
         <input type="range" id="lat" min="-90" max="90" step="1" value="40" />
       </label>
-      <button class="btn toggle on" id="play">自转演示</button>
+      <button class="btn toggle on" id="play">运动演示</button>
       <label class="ctl slim">
         <span>速度 <b id="speedVal">1×</b></span>
         <input type="range" id="speed" min="0" max="5" step="1" value="1" />

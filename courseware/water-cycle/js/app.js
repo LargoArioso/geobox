@@ -204,138 +204,205 @@ function drawParticles() {
   }
 }
 
+// ---------- 手绘素材（Kenney Scribble Platformer, CC0） ----------
+const IMGS = {}
+{
+  const list = {
+    cloudA: 'cloud_a.png',
+    cloudB: 'cloud_b.png',
+    treeRound: 'tree_round.png',
+    treePine: 'tree_pine.png',
+    bush: 'bush.png',
+    water: 'water_tile.png'
+  }
+  for (const [k, f] of Object.entries(list)) {
+    const im = new Image()
+    im.onload = () => (IMGS[k] = im)
+    im.src = './assets/' + f
+  }
+}
+
+// 确定性伪随机（每帧结果一致，画面不抖动）
+function rnd(i) {
+  const x = Math.sin(i * 127.1 + 311.7) * 43758.5453
+  return x - Math.floor(x)
+}
+
+// 手绘抖动折线路径：细分后加垂直扰动，端点不偏移保证接缝
+function wobblePath(pts, { closed = false, amp = 3, seg = 7, seed = 0 } = {}) {
+  const P = pts.map(([x, y]) => [X(x), Y(y)])
+  const n = P.length
+  const count = closed ? n : n - 1
+  ctx.beginPath()
+  let first = true
+  for (let s = 0; s < count; s++) {
+    const a = P[s]
+    const b = P[(s + 1) % n]
+    const dx = b[0] - a[0]
+    const dy = b[1] - a[1]
+    const len = Math.hypot(dx, dy) || 1
+    const nx = -dy / len
+    const ny = dx / len
+    for (let i = 0; i <= seg; i++) {
+      if (!first && i === 0) continue
+      const t = i / seg
+      const w = (rnd(seed + s * 31 + i * 7) - 0.5) * 2 * amp * Math.sin(t * Math.PI)
+      const px = a[0] + dx * t + nx * w
+      const py = a[1] + dy * t + ny * w
+      if (first) {
+        ctx.moveTo(px, py)
+        first = false
+      } else ctx.lineTo(px, py)
+    }
+  }
+  if (closed) ctx.closePath()
+}
+
+// 手绘抖动圆
+function wobbleCircle(cx, cy, r, seed) {
+  ctx.beginPath()
+  const N = 26
+  for (let i = 0; i <= N; i++) {
+    const a = (i / N) * Math.PI * 2
+    const rr = r + (rnd(seed + i * 13) - 0.5) * r * 0.14
+    const px = cx + Math.cos(a) * rr
+    const py = cy + Math.sin(a) * rr
+    if (i === 0) ctx.moveTo(px, py)
+    else ctx.lineTo(px, py)
+  }
+  ctx.closePath()
+}
+
+function drawImageAt(img, nx, nyBottom, hNorm) {
+  const h = hNorm * H
+  const w = (h * img.width) / img.height
+  ctx.drawImage(img, X(nx) - w / 2, Y(nyBottom) - h, w, h)
+}
+
 // ---------- 场景绘制 ----------
 function drawScene(time) {
-  // 天空
+  // 纸面天空（淡蓝洗）
   const sky = ctx.createLinearGradient(0, 0, 0, Y(0.78))
   sky.addColorStop(0, '#dcebf5')
-  sky.addColorStop(1, '#f4f8fa')
+  sky.addColorStop(1, '#f7f5ef')
   ctx.fillStyle = sky
   ctx.fillRect(0, 0, W, H)
 
-  // 太阳（辐射强度决定大小与光芒）
+  // 太阳（手绘：抖动圆盘 + 抖动光芒，辐射强度决定大小）
   const sunR = [26, 36, 48][state.sun]
   const sx = X(0.16)
   const sy = Y(0.11)
   const rayN = [6, 8, 12][state.sun]
-  ctx.strokeStyle = 'rgba(242,176,30,0.7)'
-  ctx.lineWidth = 2
+  ctx.strokeStyle = '#e8a020'
+  ctx.lineWidth = 3
+  ctx.lineCap = 'round'
   for (let i = 0; i < rayN; i++) {
     const a = (i / rayN) * Math.PI * 2 + time * 0.0002
+    const r1 = sunR + 9
+    const r2 = sunR + 24
     ctx.beginPath()
-    ctx.moveTo(sx + Math.cos(a) * (sunR + 6), sy + Math.sin(a) * (sunR + 6))
-    ctx.lineTo(sx + Math.cos(a) * (sunR + 16), sy + Math.sin(a) * (sunR + 16))
+    const mx = sx + Math.cos(a) * ((r1 + r2) / 2)
+    const my = sy + Math.sin(a) * ((r1 + r2) / 2)
+    const off = (rnd(i * 17) - 0.5) * 6
+    ctx.moveTo(sx + Math.cos(a) * r1, sy + Math.sin(a) * r1)
+    ctx.quadraticCurveTo(
+      mx + Math.cos(a + Math.PI / 2) * off,
+      my + Math.sin(a + Math.PI / 2) * off,
+      sx + Math.cos(a) * r2,
+      sy + Math.sin(a) * r2
+    )
     ctx.stroke()
   }
-  ctx.beginPath()
-  ctx.arc(sx, sy, sunR, 0, Math.PI * 2)
+  wobbleCircle(sx, sy, sunR, 99)
   ctx.fillStyle = '#f7c948'
   ctx.fill()
-  ctx.strokeStyle = 'rgba(38,38,38,0.4)'
-  ctx.lineWidth = 1.2
+  ctx.strokeStyle = 'rgba(38,38,38,0.75)'
+  ctx.lineWidth = 3
   ctx.stroke()
 
-  // 陆地（山体）
-  ctx.beginPath()
-  ctx.moveTo(X(0.4), Y(0.78))
-  ctx.lineTo(X(0.5), Y(0.7))
-  ctx.lineTo(X(0.62), Y(0.55))
-  ctx.lineTo(X(0.72), Y(0.42))
-  ctx.lineTo(X(0.82), Y(0.6))
-  ctx.lineTo(X(1), Y(0.58))
-  ctx.lineTo(X(1), Y(1))
-  ctx.lineTo(X(0.4), Y(1))
-  ctx.closePath()
-  const land = ctx.createLinearGradient(0, Y(0.42), 0, Y(1))
-  land.addColorStop(0, '#a8c69f')
-  land.addColorStop(0.5, '#c3b98a')
-  land.addColorStop(1, '#b09a72')
-  ctx.fillStyle = land
+  // 陆地（土黄平涂 + 手绘描边）
+  const landTop = [[0.4, 0.78], [0.5, 0.7], [0.62, 0.55], [0.72, 0.42], [0.82, 0.6], [1, 0.58]]
+  wobblePath([...landTop, [1, 1], [0.4, 1]], { closed: true, amp: 4, seed: 1 })
+  ctx.fillStyle = '#e6d7b8'
   ctx.fill()
+  ctx.strokeStyle = 'rgba(38,38,38,0.7)'
+  ctx.lineWidth = 3
+  ctx.lineJoin = 'round'
+  ctx.stroke()
+
+  // 地表草皮（沿地表线的粗绿描边）
+  wobblePath(landTop, { amp: 3.5, seed: 5 })
+  ctx.strokeStyle = '#8fae6e'
+  ctx.lineWidth = 11
+  ctx.lineCap = 'round'
+  ctx.stroke()
+  wobblePath(landTop, { amp: 3.5, seed: 5 })
   ctx.strokeStyle = 'rgba(38,38,38,0.35)'
-  ctx.lineWidth = 1.2
+  ctx.lineWidth = 1.5
   ctx.stroke()
 
-  // 雪顶
-  ctx.beginPath()
-  ctx.moveTo(X(0.672), Y(0.49))
-  ctx.lineTo(X(0.72), Y(0.42))
-  ctx.lineTo(X(0.762), Y(0.505))
-  ctx.lineTo(X(0.735), Y(0.49))
-  ctx.lineTo(X(0.71), Y(0.51))
-  ctx.lineTo(X(0.69), Y(0.485))
-  ctx.closePath()
-  ctx.fillStyle = '#f4f6f7'
+  // 雪顶（白色抖动块）
+  wobblePath(
+    [[0.672, 0.49], [0.72, 0.42], [0.762, 0.505], [0.735, 0.49], [0.71, 0.51], [0.69, 0.485]],
+    { closed: true, amp: 2.5, seed: 9 }
+  )
+  ctx.fillStyle = '#f7f9fa'
   ctx.fill()
+  ctx.strokeStyle = 'rgba(38,38,38,0.55)'
+  ctx.lineWidth = 2
+  ctx.stroke()
 
-  // 地下水位线（虚线）
-  ctx.strokeStyle = 'rgba(43,108,176,0.4)'
-  ctx.lineWidth = 1
-  ctx.setLineDash([5, 4])
-  ctx.beginPath()
-  ctx.moveTo(X(0.42), Y(0.86))
-  ctx.lineTo(X(0.55), Y(0.8))
-  ctx.lineTo(X(0.7), Y(0.68))
-  ctx.lineTo(X(0.85), Y(0.7))
-  ctx.lineTo(X(1), Y(0.68))
+  // 地下水位线（蓝色抖动虚线）
+  wobblePath([[0.42, 0.86], [0.55, 0.8], [0.7, 0.68], [0.85, 0.7], [1, 0.68]], { amp: 2.5, seed: 13 })
+  ctx.strokeStyle = 'rgba(43,108,176,0.55)'
+  ctx.lineWidth = 1.6
+  ctx.setLineDash([7, 5])
   ctx.stroke()
   ctx.setLineDash([])
 
-  // 河流
-  ctx.beginPath()
-  ctx.moveTo(X(0.78), Y(0.55))
-  ctx.quadraticCurveTo(X(0.66), Y(0.64), X(0.55), Y(0.69))
-  ctx.quadraticCurveTo(X(0.46), Y(0.73), X(0.4), Y(0.78))
-  ctx.strokeStyle = 'rgba(43,108,176,0.75)'
-  ctx.lineWidth = 5
+  // 河流（蓝色粗抖动线 + 白色高光）
+  const river = [[0.78, 0.55], [0.66, 0.64], [0.55, 0.69], [0.46, 0.73], [0.4, 0.78]]
+  wobblePath(river, { amp: 2.5, seed: 17 })
+  ctx.strokeStyle = '#4a90c4'
+  ctx.lineWidth = 7
   ctx.lineCap = 'round'
   ctx.stroke()
+  wobblePath(river, { amp: 2, seed: 18 })
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)'
+  ctx.lineWidth = 2
+  ctx.stroke()
 
-  // 树
-  for (const [tx, ty, s] of [[0.58, 0.615, 1], [0.86, 0.575, 0.85], [0.93, 0.565, 0.7]]) {
-    ctx.strokeStyle = '#6b4f2e'
-    ctx.lineWidth = 3 * s
-    ctx.beginPath()
-    ctx.moveTo(X(tx), Y(ty))
-    ctx.lineTo(X(tx), Y(ty - 0.035 * s))
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.arc(X(tx), Y(ty - 0.055 * s), 14 * s, 0, Math.PI * 2)
-    ctx.fillStyle = '#5d8a54'
-    ctx.fill()
-  }
+  // 树与灌木（手绘素材，锚定底部）
+  if (IMGS.treeRound) drawImageAt(IMGS.treeRound, 0.585, 0.645, 0.115)
+  if (IMGS.treePine) drawImageAt(IMGS.treePine, 0.865, 0.6, 0.085)
+  if (IMGS.bush) drawImageAt(IMGS.bush, 0.935, 0.585, 0.05)
+  if (IMGS.treePine) drawImageAt(IMGS.treePine, 0.47, 0.735, 0.065)
 
-  // 海洋
+  // 海洋（平涂蓝 + 手绘水纹图案 + 岸线）
+  ctx.save()
   ctx.beginPath()
-  ctx.moveTo(0, Y(0.78))
-  ctx.lineTo(X(0.4), Y(0.78))
-  ctx.lineTo(X(0.4), Y(1))
-  ctx.lineTo(0, Y(1))
-  ctx.closePath()
-  const sea = ctx.createLinearGradient(0, Y(0.78), 0, Y(1))
-  sea.addColorStop(0, '#7fb3d9')
-  sea.addColorStop(1, '#3d74a6')
-  ctx.fillStyle = sea
-  ctx.fill()
-  // 波浪
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)'
-  ctx.lineWidth = 1.5
-  for (let r = 0; r < 3; r++) {
-    ctx.beginPath()
-    for (let i = 0; i <= 40; i++) {
-      const wx = (i / 40) * X(0.38)
-      const wy = Y(0.8 + r * 0.05) + Math.sin(i * 0.9 + time * 0.0012 + r * 2) * 3
-      if (i === 0) ctx.moveTo(wx, wy)
-      else ctx.lineTo(wx, wy)
-    }
-    ctx.stroke()
+  ctx.rect(0, Y(0.78), X(0.4), H - Y(0.78))
+  ctx.clip()
+  ctx.fillStyle = '#7fb3d9'
+  ctx.fillRect(0, Y(0.78), X(0.4), H - Y(0.78))
+  if (IMGS.water) {
+    const pat = ctx.createPattern(IMGS.water, 'repeat')
+    ctx.globalAlpha = 0.5
+    ctx.fillStyle = pat
+    ctx.fillRect(0, Y(0.78), X(0.4), H - Y(0.78))
+    ctx.globalAlpha = 1
   }
+  ctx.restore()
+  wobblePath([[0, 0.78], [0.4, 0.78]], { amp: 2.5, seed: 23 })
+  ctx.strokeStyle = 'rgba(38,38,38,0.6)'
+  ctx.lineWidth = 2.5
+  ctx.stroke()
 
-  // 云（水汽输送的云会往返漂移）
+  // 云（手绘素材，水汽输送的云往返漂移）
   const drift = (Math.sin(time * 0.00035) + 1) / 2 // 0..1
-  drawCloud(X(0.15), Y(0.19), 1)
-  drawCloud(X(0.2 + drift * 0.45), Y(0.14), 0.8)
-  drawCloud(X(0.72), Y(0.17), 1.1)
+  if (IMGS.cloudA) drawImageAt(IMGS.cloudA, 0.15, 0.26, 0.1)
+  if (IMGS.cloudB) drawImageAt(IMGS.cloudB, 0.2 + drift * 0.45, 0.22, 0.085)
+  if (IMGS.cloudA) drawImageAt(IMGS.cloudA, 0.72, 0.24, 0.12)
 
   // 环节标签
   const active = CYCLES[state.cycle]
@@ -368,19 +435,6 @@ function drawScene(time) {
     ctx.stroke()
     ctx.setLineDash([])
   }
-}
-
-function drawCloud(cx, cy, s) {
-  ctx.beginPath()
-  ctx.arc(cx - 26 * s, cy + 6 * s, 16 * s, 0, Math.PI * 2)
-  ctx.arc(cx, cy - 6 * s, 22 * s, 0, Math.PI * 2)
-  ctx.arc(cx + 26 * s, cy + 6 * s, 16 * s, 0, Math.PI * 2)
-  ctx.arc(cx, cy + 10 * s, 20 * s, 0, Math.PI * 2)
-  ctx.fillStyle = 'rgba(255,255,255,0.92)'
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(38,38,38,0.18)'
-  ctx.lineWidth = 1
-  ctx.stroke()
 }
 
 function roundRect(x, y, w, h, r) {
