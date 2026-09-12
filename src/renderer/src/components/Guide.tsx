@@ -20,8 +20,9 @@ const MANIFEST_FIELDS: Array<[string, string, string]> = [
   ['permissions', '可选', '保留字段，填空数组即可']
 ]
 
-const VIBE_PROMPT = `帮我做一个地理交互课件，单个 HTML 文件（可引相对路径的本地 js/css），
-纯前端、离线可用、不加载任何 CDN。主题：____（如：洋流分布）。
+const VIBE_PROMPT = `帮我做一个地理交互课件：入口为 index.html，可拆本地 js/css，
+图片等素材放在 assets/ 子目录、一律用相对路径引用；
+纯前端、离线可用、不加载任何 CDN 或在线图片。主题：____（如：洋流分布）。
 要求：白色纸张质感背景、墨黑手绘风线条、适配大屏触控点击，
 画面随窗口缩放，中文标注。`
 
@@ -75,6 +76,8 @@ export default function Guide(): JSX.Element {
             <li>
               <b>补一个 manifest.json。</b>把 AI 生成的文件放进一个文件夹，
               在文件夹根目录新建 <code>manifest.json</code>，照抄下方模板并改成你的信息。
+              文件夹里可以放任意素材——图片、字体、数据文件（如 <code>assets/地图.jpg</code>），
+              网页里用相对路径引用即可，导入时会整个目录一起打包。
             </li>
             <li>
               <b>导入 GeoBox。</b>点顶栏「从文件夹导入」选中课件文件夹；
@@ -116,7 +119,8 @@ export default function Guide(): JSX.Element {
           <div className="guide-note">
             <p className="guide-note-title">课件网页的四条约定</p>
             <p>
-              ① 单入口 <code>index.html</code>，资源一律用相对路径；
+              ① 单入口 <code>index.html</code>，导入单位是<b>整个文件夹</b>（不是单个 html），
+              图片等素材放子目录、一律用相对路径引用；
               ② 不依赖网络（不引 CDN / 在线字体 / 在线图片），教室断网也能用；
               ③ 画面自适应窗口尺寸，字体和按钮够大，适配触控；
               ④ 想显示「退出」按钮，在页面里判断 <code>window.geobox</code> 存在时调用{' '}
