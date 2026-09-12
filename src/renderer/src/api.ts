@@ -1,17 +1,16 @@
 import type {
   ImportResult,
   PackageRecord,
+  PickSourceResult,
   ResourceRecord,
-  WebImportPayload,
-  WebImportPrepare
+  WebImportPayload
 } from '../../shared/types'
 
 export interface GeoboxLibApi {
   list: () => Promise<PackageRecord[]>
-  importDialog: () => Promise<ImportResult>
-  importFolderDialog: () => Promise<ImportResult>
   importPath: (p: string) => Promise<ImportResult>
-  pickHtml: () => Promise<WebImportPrepare>
+  pickImportFile: () => Promise<PickSourceResult>
+  pickImportFolder: () => Promise<PickSourceResult>
   importWeb: (payload: WebImportPayload) => Promise<ImportResult>
   exportPackage: (id: string) => Promise<ImportResult>
   deletePackage: (id: string) => Promise<ImportResult>

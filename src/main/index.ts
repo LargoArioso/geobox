@@ -6,7 +6,7 @@ import { importFromFolder, importFromZip, exportPackage, removePackage, importWe
 import { registerGpakScheme, handleGpakProtocol, openPlayer, registerPlayerIpc } from './player'
 import { seedBuiltinCourseware, seedBuiltinResources } from './builtin'
 import { addResourceDialog, openResource, removeResource } from './resources'
-import type { ImportResult, WebImportPayload, WebImportPrepare } from '../shared/types'
+import type { ImportResult, WebImportPayload, PickSourceResult } from '../shared/types'
 
 registerGpakScheme()
 
@@ -49,56 +49,61 @@ async function importPath(p: string): Promise<ImportResult> {
 function registerLibraryIpc(): void {
   ipcMain.handle('pkg:list', () => listPackages())
 
-  ipcMain.handle('pkg:importDialog', async () => {
-    if (!libraryWin) return { ok: false, message: '窗口不可用' }
+  // ---------- 统一导入入口：自动识别 .gpak / 入口 html / 文件夹 ----------
+  ipcMain.handle('pkg:pickImportFile', async (): Promise<PickSourceResult> => {
+    if (!libraryWin) return { kind: 'canceled' }
     const result = await dialog.showOpenDialog(libraryWin, {
-      title: '导入课件包',
+      title: '选择课件包（.gpak）或课件的入口网页（.html）',
       properties: ['openFile'],
-      filters: [{ name: 'GeoBox 课件包', extensions: ['gpak', 'zip'] }]
+      filters: [
+        { name: '课件包 / 网页课件', extensions: ['gpak', 'zip', 'html', 'htm'] },
+        { name: 'GeoBox 课件包', extensions: ['gpak', 'zip'] },
+        { name: '网页课件入口', extensions: ['html', 'htm'] }
+      ]
     })
-    if (result.canceled || !result.filePaths[0]) return { ok: false, message: '已取消' }
-    return importPath(result.filePaths[0])
+    if (result.canceled || !result.filePaths[0]) return { kind: 'canceled' }
+    const file = result.filePaths[0]
+    const ext = extname(file).toLowerCase()
+    // .gpak / .zip：包内自带 manifest，直接导入
+    if (ext === '.gpak' || ext === '.zip') {
+      return { kind: 'imported', result: await importFromZip(file) }
+    }
+    // 入口 html：所在文件夹即课件目录，素材一并导入，表单补全信息
+    const rootDir = dirname(file)
+    return {
+      kind: 'prepare',
+      prepare: {
+        canceled: false,
+        rootDir,
+        entry: basename(file),
+        suggestedName: basename(rootDir),
+        hasManifest: existsSync(join(rootDir, 'manifest.json'))
+      }
+    }
   })
 
-  ipcMain.handle('pkg:importFolderDialog', async () => {
-    if (!libraryWin) return { ok: false, message: '窗口不可用' }
+  ipcMain.handle('pkg:pickImportFolder', async (): Promise<PickSourceResult> => {
+    if (!libraryWin) return { kind: 'canceled' }
     const result = await dialog.showOpenDialog(libraryWin, {
-      title: '从文件夹导入课件',
+      title: '选择课件文件夹（含图片素材的整个目录）',
       properties: ['openDirectory']
     })
-    if (result.canceled || !result.filePaths[0]) return { ok: false, message: '已取消' }
+    if (result.canceled || !result.filePaths[0]) return { kind: 'canceled' }
     const dir = result.filePaths[0]
-    // 文件夹缺少 manifest：交给前端弹表单收集信息，而不是静默自动生成
-    if (!existsSync(join(dir, 'manifest.json'))) {
-      const prepare: WebImportPrepare = {
+    // 已有 manifest：直接入库
+    if (existsSync(join(dir, 'manifest.json'))) {
+      return { kind: 'imported', result: importFromFolder(dir) }
+    }
+    // 无 manifest：表单补全信息
+    return {
+      kind: 'prepare',
+      prepare: {
         canceled: false,
         rootDir: dir,
         entry: 'index.html',
         suggestedName: basename(dir),
         hasManifest: false
       }
-      return { ok: false, message: '该文件夹还没有课件信息，请填写后完成导入', needManifest: prepare }
-    }
-    return importPath(dir)
-  })
-
-  // ---------- 导入网页课件（表单填写信息，自动生成 manifest） ----------
-  ipcMain.handle('pkg:pickHtml', async (): Promise<WebImportPrepare> => {
-    if (!libraryWin) return { canceled: true }
-    const result = await dialog.showOpenDialog(libraryWin, {
-      title: '选择课件的入口网页（其所在文件夹即课件目录，素材一并导入）',
-      properties: ['openFile'],
-      filters: [{ name: '网页课件入口', extensions: ['html', 'htm'] }]
-    })
-    if (result.canceled || !result.filePaths[0]) return { canceled: true }
-    const file = result.filePaths[0]
-    const rootDir = dirname(file)
-    return {
-      canceled: false,
-      rootDir,
-      entry: basename(file),
-      suggestedName: basename(rootDir),
-      hasManifest: existsSync(join(rootDir, 'manifest.json'))
     }
   })
 

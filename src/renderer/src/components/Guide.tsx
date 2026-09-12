@@ -74,13 +74,15 @@ export default function Guide(): JSX.Element {
               <pre className="guide-code">{VIBE_PROMPT}</pre>
             </li>
             <li>
-              <b>导入 GeoBox（无需手写任何配置）。</b>点顶栏「导入网页课件」，
-              选中课件的入口 html——它所在的整个文件夹（含图片等素材）就是课件。
-              在弹出的表单里填名称、作者、标签，<b>manifest.json 会自动生成</b>并打包入库。
+              <b>导入 GeoBox（无需手写任何配置）。</b>点顶栏「导入课件」，
+              在弹窗里点「选择文件」选中入口 html（或点「选择文件夹」选整个课件目录）——
+              目录内图片等素材会一并导入。在表单里填名称、作者、标签，
+              <b>manifest.json 会自动生成</b>并打包入库。
             </li>
             <li>
-              <b>其他导入方式。</b>文件夹里已有 manifest.json 的，用「从文件夹导入」直接上架；
-              也可以把文件夹压缩成 zip 改后缀为 <code>.gpak</code>，用「导入课件包」导入（双击 .gpak 文件也可以）。
+              <b>其他导入方式。</b>同事分享的 <code>.gpak</code>{' '}
+              课件包，在同一个「导入课件」弹窗里「选择文件」即可（也可以直接双击 .gpak 文件）；
+              文件夹里已有 manifest.json 的，选中后会跳过表单直接上架。
             </li>
             <li>
               <b>验证与分享。</b>打开播放确认无误后，点卡片上的「导出」得到单个 .gpak 文件，

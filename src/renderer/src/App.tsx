@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ImportResult, PackageRecord, ResourceRecord, WebImportPrepare } from '../../shared/types'
+import type { ImportResult, PackageRecord, ResourceRecord } from '../../shared/types'
 import { api } from './api'
 import PackageCard from './components/PackageCard'
 import ResourceList from './components/ResourceList'
@@ -15,7 +15,7 @@ export default function App(): JSX.Element {
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [toast, setToast] = useState<string>('')
-  const [webImport, setWebImport] = useState<WebImportPrepare | null>(null)
+  const [showImport, setShowImport] = useState(false)
 
   const refresh = useCallback(async () => {
     setPackages(await api.list())
@@ -33,22 +33,6 @@ export default function App(): JSX.Element {
   const notify = (r: ImportResult): void => {
     setToast(r.message)
     window.setTimeout(() => setToast(''), 3000)
-  }
-
-  const doImport = async (kind: 'file' | 'folder'): Promise<void> => {
-    const r = kind === 'file' ? await api.importDialog() : await api.importFolderDialog()
-    // 文件夹缺 manifest：弹出信息表单而不是报错
-    if (r.needManifest && !r.needManifest.canceled) {
-      setWebImport(r.needManifest)
-      return
-    }
-    if (r.message !== '已取消') notify(r)
-    refresh()
-  }
-
-  const doPickHtml = async (): Promise<void> => {
-    const p = await api.pickHtml()
-    if (!p.canceled) setWebImport(p)
   }
 
   const doUploadResource = async (): Promise<void> => {
@@ -120,17 +104,9 @@ export default function App(): JSX.Element {
             />
           )}
           {tab === 'packages' && (
-            <>
-              <button className="btn primary" onClick={doPickHtml}>
-                导入网页课件
-              </button>
-              <button className="btn" onClick={() => doImport('file')}>
-                导入课件包
-              </button>
-              <button className="btn" onClick={() => doImport('folder')}>
-                从文件夹导入
-              </button>
-            </>
+            <button className="btn primary" onClick={() => setShowImport(true)}>
+              导入课件
+            </button>
           )}
           {tab === 'resources' && (
             <button className="btn primary" onClick={doUploadResource}>
@@ -168,9 +144,9 @@ export default function App(): JSX.Element {
             <div className="empty">
               <p className="empty-title">Empty Library</p>
               <p className="empty-hint">
-                还没有课件。点击「导入课件包」导入 .gpak 文件，
-                或「从文件夹导入」你 vibe coding 的网页课件项目——
-                补一个 manifest.json 即可上架。
+                还没有课件。点击右上角「导入课件」——.gpak 课件包、入口 html、
+                整个文件夹都支持，自动识别；没有 manifest.json 的网页课件，
+                在弹窗里填个名字就能上架。
               </p>
             </div>
           ) : (
@@ -215,12 +191,11 @@ export default function App(): JSX.Element {
 
       {toast && <div className="toast">{toast}</div>}
 
-      {webImport && (
+      {showImport && (
         <ImportWebModal
-          prepare={webImport}
-          onCancel={() => setWebImport(null)}
+          onCancel={() => setShowImport(false)}
           onDone={(r) => {
-            setWebImport(null)
+            setShowImport(false)
             notify(r)
             refresh()
           }}

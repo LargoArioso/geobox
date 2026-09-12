@@ -3,10 +3,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 /** 课件库窗口使用的 API：window.geoboxLib */
 contextBridge.exposeInMainWorld('geoboxLib', {
   list: () => ipcRenderer.invoke('pkg:list'),
-  importDialog: () => ipcRenderer.invoke('pkg:importDialog'),
-  importFolderDialog: () => ipcRenderer.invoke('pkg:importFolderDialog'),
   importPath: (p: string) => ipcRenderer.invoke('pkg:importPath', p),
-  pickHtml: () => ipcRenderer.invoke('pkg:pickHtml'),
+  pickImportFile: () => ipcRenderer.invoke('pkg:pickImportFile'),
+  pickImportFolder: () => ipcRenderer.invoke('pkg:pickImportFolder'),
   importWeb: (payload: unknown) => ipcRenderer.invoke('pkg:importWeb', payload),
   exportPackage: (id: string) => ipcRenderer.invoke('pkg:export', id),
   deletePackage: (id: string) => ipcRenderer.invoke('pkg:delete', id),

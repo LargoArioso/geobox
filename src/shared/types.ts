@@ -23,8 +23,6 @@ export interface ImportResult {
   ok: boolean
   message: string
   record?: PackageRecord
-  /** 目标文件夹缺少 manifest.json 时携带待填信息，前端应弹出信息表单 */
-  needManifest?: WebImportPrepare
 }
 
 /** 教学资料（课标 / 教材 / 其他文档）记录 */
@@ -57,4 +55,12 @@ export interface WebImportPayload {
   subject?: string
   tags?: string[]
   version?: string
+}
+
+/** 统一导入入口：选择来源后的自动识别结果 */
+export interface PickSourceResult {
+  /** canceled=用户取消；imported=来源自带 manifest 已直接导入；prepare=需要表单补全信息 */
+  kind: 'canceled' | 'imported' | 'prepare'
+  result?: ImportResult
+  prepare?: WebImportPrepare
 }
