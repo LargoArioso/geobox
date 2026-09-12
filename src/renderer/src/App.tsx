@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ImportResult, PackageRecord, ResourceRecord } from '../../shared/types'
+import type { ImportResult, PackageRecord, ResourceRecord, WebImportPrepare } from '../../shared/types'
 import { api } from './api'
 import PackageCard from './components/PackageCard'
 import ResourceList from './components/ResourceList'
 import Guide from './components/Guide'
+import ImportWebModal from './components/ImportWebModal'
 
 type Tab = 'packages' | 'resources' | 'guide'
 
@@ -14,6 +15,7 @@ export default function App(): JSX.Element {
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [toast, setToast] = useState<string>('')
+  const [webImport, setWebImport] = useState<WebImportPrepare | null>(null)
 
   const refresh = useCallback(async () => {
     setPackages(await api.list())
@@ -35,8 +37,18 @@ export default function App(): JSX.Element {
 
   const doImport = async (kind: 'file' | 'folder'): Promise<void> => {
     const r = kind === 'file' ? await api.importDialog() : await api.importFolderDialog()
+    // 文件夹缺 manifest：弹出信息表单而不是报错
+    if (r.needManifest && !r.needManifest.canceled) {
+      setWebImport(r.needManifest)
+      return
+    }
     if (r.message !== '已取消') notify(r)
     refresh()
+  }
+
+  const doPickHtml = async (): Promise<void> => {
+    const p = await api.pickHtml()
+    if (!p.canceled) setWebImport(p)
   }
 
   const doUploadResource = async (): Promise<void> => {
@@ -109,7 +121,10 @@ export default function App(): JSX.Element {
           )}
           {tab === 'packages' && (
             <>
-              <button className="btn primary" onClick={() => doImport('file')}>
+              <button className="btn primary" onClick={doPickHtml}>
+                导入网页课件
+              </button>
+              <button className="btn" onClick={() => doImport('file')}>
                 导入课件包
               </button>
               <button className="btn" onClick={() => doImport('folder')}>
@@ -199,6 +214,18 @@ export default function App(): JSX.Element {
       )}
 
       {toast && <div className="toast">{toast}</div>}
+
+      {webImport && (
+        <ImportWebModal
+          prepare={webImport}
+          onCancel={() => setWebImport(null)}
+          onDone={(r) => {
+            setWebImport(null)
+            notify(r)
+            refresh()
+          }}
+        />
+      )}
     </div>
   )
 }

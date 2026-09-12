@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('geoboxLib', {
   importDialog: () => ipcRenderer.invoke('pkg:importDialog'),
   importFolderDialog: () => ipcRenderer.invoke('pkg:importFolderDialog'),
   importPath: (p: string) => ipcRenderer.invoke('pkg:importPath', p),
+  pickHtml: () => ipcRenderer.invoke('pkg:pickHtml'),
+  importWeb: (payload: unknown) => ipcRenderer.invoke('pkg:importWeb', payload),
   exportPackage: (id: string) => ipcRenderer.invoke('pkg:export', id),
   deletePackage: (id: string) => ipcRenderer.invoke('pkg:delete', id),
   openPackage: (id: string) => ipcRenderer.invoke('pkg:open', id),

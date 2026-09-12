@@ -74,14 +74,13 @@ export default function Guide(): JSX.Element {
               <pre className="guide-code">{VIBE_PROMPT}</pre>
             </li>
             <li>
-              <b>补一个 manifest.json。</b>把 AI 生成的文件放进一个文件夹，
-              在文件夹根目录新建 <code>manifest.json</code>，照抄下方模板并改成你的信息。
-              文件夹里可以放任意素材——图片、字体、数据文件（如 <code>assets/地图.jpg</code>），
-              网页里用相对路径引用即可，导入时会整个目录一起打包。
+              <b>导入 GeoBox（无需手写任何配置）。</b>点顶栏「导入网页课件」，
+              选中课件的入口 html——它所在的整个文件夹（含图片等素材）就是课件。
+              在弹出的表单里填名称、作者、标签，<b>manifest.json 会自动生成</b>并打包入库。
             </li>
             <li>
-              <b>导入 GeoBox。</b>点顶栏「从文件夹导入」选中课件文件夹；
-              或先把文件夹压缩成 zip 并改后缀为 <code>.gpak</code>，用「导入课件包」导入（双击 .gpak 文件也可以）。
+              <b>其他导入方式。</b>文件夹里已有 manifest.json 的，用「从文件夹导入」直接上架；
+              也可以把文件夹压缩成 zip 改后缀为 <code>.gpak</code>，用「导入课件包」导入（双击 .gpak 文件也可以）。
             </li>
             <li>
               <b>验证与分享。</b>打开播放确认无误后，点卡片上的「导出」得到单个 .gpak 文件，

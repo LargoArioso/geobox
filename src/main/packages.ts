@@ -3,7 +3,7 @@ import { join, basename } from 'node:path'
 import { mkdirSync, existsSync, readFileSync, rmSync, copyFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import JSZip from 'jszip'
-import type { ImportResult, PackageManifest, PackageRecord } from '../shared/types'
+import type { ImportResult, PackageManifest, PackageRecord, WebImportPayload } from '../shared/types'
 import { upsertPackage, deletePackageRecord, getPackage } from './db'
 
 export function packagesDir(): string {
@@ -76,6 +76,43 @@ export function importFromFolder(srcDir: string, source: 'builtin' | 'user' = 'u
     }
     upsertPackage(record)
     return { ok: true, message: `已导入「${manifest.name}」`, record }
+  } catch (e: any) {
+    return { ok: false, message: `导入失败：${e?.message ?? e}` }
+  }
+}
+
+/**
+ * 导入网页课件：按用户表单填写的信息生成 manifest.json 写回源文件夹，再整体导入。
+ * 源文件夹里已有 manifest 时保留其 id（再次导入即按版本覆盖更新）。
+ */
+export function importWeb(payload: WebImportPayload): ImportResult {
+  try {
+    const { rootDir, entry } = payload
+    if (!payload.name?.trim()) return { ok: false, message: '课件名称不能为空' }
+    if (!existsSync(join(rootDir, entry))) {
+      return { ok: false, message: `找不到入口文件 ${entry}` }
+    }
+    const manifestPath = join(rootDir, 'manifest.json')
+    let existingId: string | null = null
+    if (existsSync(manifestPath)) {
+      try {
+        existingId = (JSON.parse(readFileSync(manifestPath, 'utf-8')) as PackageManifest).id ?? null
+      } catch {
+        // 损坏的 manifest 直接重写
+      }
+    }
+    const manifest: PackageManifest = {
+      id: existingId ?? `user-${Date.now().toString(36)}`,
+      name: payload.name.trim(),
+      author: payload.author?.trim() ?? '',
+      version: payload.version?.trim() || '1.0.0',
+      subject: payload.subject?.trim() || '地理',
+      tags: payload.tags ?? [],
+      entry,
+      permissions: []
+    }
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8')
+    return importFromFolder(rootDir, 'user')
   } catch (e: any) {
     return { ok: false, message: `导入失败：${e?.message ?? e}` }
   }

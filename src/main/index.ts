@@ -1,12 +1,12 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import { join, extname } from 'node:path'
+import { join, extname, dirname, basename } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
 import { initDb, listPackages, listResources } from './db'
-import { importFromFolder, importFromZip, exportPackage, removePackage } from './packages'
+import { importFromFolder, importFromZip, exportPackage, removePackage, importWeb } from './packages'
 import { registerGpakScheme, handleGpakProtocol, openPlayer, registerPlayerIpc } from './player'
 import { seedBuiltinCourseware, seedBuiltinResources } from './builtin'
 import { addResourceDialog, openResource, removeResource } from './resources'
-import type { ImportResult } from '../shared/types'
+import type { ImportResult, WebImportPayload, WebImportPrepare } from '../shared/types'
 
 registerGpakScheme()
 
@@ -67,8 +67,42 @@ function registerLibraryIpc(): void {
       properties: ['openDirectory']
     })
     if (result.canceled || !result.filePaths[0]) return { ok: false, message: '已取消' }
-    return importPath(result.filePaths[0])
+    const dir = result.filePaths[0]
+    // 文件夹缺少 manifest：交给前端弹表单收集信息，而不是静默自动生成
+    if (!existsSync(join(dir, 'manifest.json'))) {
+      const prepare: WebImportPrepare = {
+        canceled: false,
+        rootDir: dir,
+        entry: 'index.html',
+        suggestedName: basename(dir),
+        hasManifest: false
+      }
+      return { ok: false, message: '该文件夹还没有课件信息，请填写后完成导入', needManifest: prepare }
+    }
+    return importPath(dir)
   })
+
+  // ---------- 导入网页课件（表单填写信息，自动生成 manifest） ----------
+  ipcMain.handle('pkg:pickHtml', async (): Promise<WebImportPrepare> => {
+    if (!libraryWin) return { canceled: true }
+    const result = await dialog.showOpenDialog(libraryWin, {
+      title: '选择课件的入口网页（其所在文件夹即课件目录，素材一并导入）',
+      properties: ['openFile'],
+      filters: [{ name: '网页课件入口', extensions: ['html', 'htm'] }]
+    })
+    if (result.canceled || !result.filePaths[0]) return { canceled: true }
+    const file = result.filePaths[0]
+    const rootDir = dirname(file)
+    return {
+      canceled: false,
+      rootDir,
+      entry: basename(file),
+      suggestedName: basename(rootDir),
+      hasManifest: existsSync(join(rootDir, 'manifest.json'))
+    }
+  })
+
+  ipcMain.handle('pkg:importWeb', (_e, payload: WebImportPayload) => importWeb(payload))
 
   ipcMain.handle('pkg:importPath', (_e, p: string) => importPath(p))
 
