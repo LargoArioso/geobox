@@ -160,6 +160,17 @@ body { display: flex; flex-direction: column; }
   gap: 8px;
 }
 
+#flowChart {
+  width: 100%;
+  height: 260px;
+  display: block;
+  background: #fff;
+  border: 1px solid var(--ink-10);
+  border-radius: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .proc-btn {
   font-family: var(--sans);
   font-size: 13px;

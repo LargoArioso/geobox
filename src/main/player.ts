@@ -55,8 +55,11 @@ export function openPlayer(packageId: string): boolean {
       nodeIntegration: false
     }
   })
-  playerWindows.set(win.webContents.id, packageId)
-  win.on('closed', () => playerWindows.delete(win.webContents.id))
+  // 注意：'closed' 触发时 webContents 已销毁，必须先取存 id，
+  // 否则回调里访问 win.webContents.id 会抛 "Object has been destroyed"
+  const wcId = win.webContents.id
+  playerWindows.set(wcId, packageId)
+  win.on('closed', () => playerWindows.delete(wcId))
   win.maximize()
   win.loadURL(`gpak://pkg/${packageId}/${rec.entry ?? 'index.html'}`)
   return true

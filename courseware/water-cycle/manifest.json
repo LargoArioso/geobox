@@ -2,7 +2,7 @@
   "id": "water-cycle",
   "name": "水循环动态示意图",
   "author": "GeoBox 官方",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "subject": "地理",
   "tags": ["水循环", "地球上的水", "预置", "高中", "初中"],
   "entry": "index.html",
