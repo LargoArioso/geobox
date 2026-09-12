@@ -3,8 +3,9 @@ import type { ImportResult, PackageRecord, ResourceRecord } from '../../shared/t
 import { api } from './api'
 import PackageCard from './components/PackageCard'
 import ResourceList from './components/ResourceList'
+import Guide from './components/Guide'
 
-type Tab = 'packages' | 'resources'
+type Tab = 'packages' | 'resources' | 'guide'
 
 export default function App(): JSX.Element {
   const [tab, setTab] = useState<Tab>('packages')
@@ -90,15 +91,23 @@ export default function App(): JSX.Element {
           >
             资料 <em>{resources.length}</em>
           </span>
+          <span
+            className={`tab ${tab === 'guide' ? 'active' : ''}`}
+            onClick={() => setTab('guide')}
+          >
+            教程
+          </span>
         </nav>
         <div className="actions">
-          <input
-            className="search"
-            placeholder={tab === 'packages' ? '搜索课件 / 作者 / 标签…' : '搜索资料…'}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {tab === 'packages' ? (
+          {tab !== 'guide' && (
+            <input
+              className="search"
+              placeholder={tab === 'packages' ? '搜索课件 / 作者 / 标签…' : '搜索资料…'}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          )}
+          {tab === 'packages' && (
             <>
               <button className="btn primary" onClick={() => doImport('file')}>
                 导入课件包
@@ -107,7 +116,8 @@ export default function App(): JSX.Element {
                 从文件夹导入
               </button>
             </>
-          ) : (
+          )}
+          {tab === 'resources' && (
             <button className="btn primary" onClick={doUploadResource}>
               上传资料
             </button>
@@ -135,7 +145,9 @@ export default function App(): JSX.Element {
         </div>
       )}
 
-      {tab === 'packages' ? (
+      {tab === 'guide' ? (
+        <Guide />
+      ) : tab === 'packages' ? (
         <main className="grid">
           {filtered.length === 0 ? (
             <div className="empty">
