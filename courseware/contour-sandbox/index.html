@@ -52,9 +52,15 @@
   </main>
 
   <section id="profilePanel" hidden>
+    <div class="profile-resize" id="profileResize" title="拖动调整剖面图高度"></div>
     <div class="profile-head">
       <span class="view-tag">地形剖面图</span>
       <span id="profileInfo"></span>
+      <div class="profile-zoom">
+        <button class="btn small" id="zoomOut" title="垂直缩小">−</button>
+        <span id="zoomVal">1×</span>
+        <button class="btn small" id="zoomIn" title="垂直放大">＋</button>
+      </div>
       <button class="btn small" id="clearProfile">清除剖面</button>
     </div>
     <canvas id="profileCanvas"></canvas>

@@ -15,6 +15,8 @@ const state = {
   profileMode: false,
   profileA: null, // {gx, gy} 网格浮点坐标
   profileB: null,
+  profileZoom: 1, // 剖面图垂直放大倍数
+  profilePan: 0, // 剖面图垂直视窗平移（米）
   demName: null
 }
 
@@ -357,20 +359,30 @@ function drawProfile() {
   minH = Math.floor(minH / 50) * 50
   maxH = Math.ceil((minH + range) / 50) * 50 + 50
 
+  // 垂直缩放视窗：以剖面高程中点为中心，按 zoom 压缩可见范围，pan 平移（米）
+  const baseRange = maxH - minH
+  const visRange = baseRange / state.profileZoom
+  const panLimit = baseRange / 2
+  state.profilePan = Math.max(-panLimit, Math.min(panLimit, state.profilePan))
+  const mid = (minH + maxH) / 2 + state.profilePan
+  const vMin = mid - visRange / 2
+  const vMax = mid + visRange / 2
+  state.profileVisRange = visRange // 供平移拖拽换算
+
   const padL = 52, padR = 16, padT = 12, padB = 26
   const iw = w - padL - padR
   const ih = hgt - padT - padB
   const toX = (t) => padL + t * iw
-  const toY = (h) => padT + (1 - (h - minH) / (maxH - minH)) * ih
+  const toY = (h) => padT + (1 - (h - vMin) / (vMax - vMin)) * ih
 
-  // 网格与坐标轴
+  // 网格与坐标轴（按可见范围取整绘制）
   pctx.strokeStyle = 'rgba(38,38,38,0.12)'
   pctx.fillStyle = 'rgba(38,38,38,0.55)'
   pctx.font = '11px Consolas, monospace'
   pctx.textAlign = 'right'
   pctx.lineWidth = 0.8
-  const step = range > 1000 ? 200 : range > 400 ? 100 : 50
-  for (let h = minH; h <= maxH; h += step) {
+  const step = visRange > 1000 ? 200 : visRange > 400 ? 100 : visRange > 150 ? 50 : 20
+  for (let h = Math.ceil(vMin / step) * step; h <= vMax; h += step) {
     const y = toY(h)
     pctx.beginPath(); pctx.moveTo(padL, y); pctx.lineTo(padL + iw, y); pctx.stroke()
     pctx.fillText(`${h} m`, padL - 6, y + 4)
@@ -395,15 +407,23 @@ function drawProfile() {
     pctx.lineTo(toX((k + 1) / M), toY(samples[k + 1]))
     pctx.stroke()
   }
-  // 填充
+  // 填充（填充到可见视窗底部）
   pctx.fillStyle = 'rgba(120,100,70,0.12)'
   pctx.beginPath()
   pctx.moveTo(toX(0), toY(samples[0]))
   for (let k = 1; k <= M; k++) pctx.lineTo(toX(k / M), toY(samples[k]))
-  pctx.lineTo(toX(1), toY(minH))
-  pctx.lineTo(toX(0), toY(minH))
+  pctx.lineTo(toX(1), toY(vMin))
+  pctx.lineTo(toX(0), toY(vMin))
   pctx.closePath()
   pctx.fill()
+
+  // 放大时的平移提示
+  if (state.profileZoom > 1) {
+    pctx.fillStyle = 'rgba(38,38,38,0.4)'
+    pctx.font = '11px "PingFang SC", "Microsoft YaHei", sans-serif'
+    pctx.textAlign = 'right'
+    pctx.fillText('在图上拖动可上下平移', padL + iw - 6, padT + 12)
+  }
 
   // 信息
   let maxSlope = 0
@@ -479,10 +499,75 @@ map2d.addEventListener('pointerdown', (e) => {
     state.profileB = null
   } else {
     state.profileB = cell
+    state.profilePan = 0 // 新剖面重置平移
   }
   buildProfileLine3d()
   draw2d()
   drawProfile()
+})
+
+// ---------- 剖面图：垂直缩放 / 平移 / 面板调高 ----------
+function updateZoomLabel() {
+  $('zoomVal').textContent = `${Math.round(state.profileZoom * 10) / 10}×`
+}
+
+$('zoomIn').addEventListener('click', () => {
+  state.profileZoom = Math.min(6, state.profileZoom * 1.5)
+  updateZoomLabel()
+  drawProfile()
+})
+
+$('zoomOut').addEventListener('click', () => {
+  state.profileZoom = Math.max(1, state.profileZoom / 1.5)
+  if (state.profileZoom === 1) state.profilePan = 0
+  updateZoomLabel()
+  drawProfile()
+})
+
+// 剖面图垂直拖动平移（内容跟随手指/鼠标）
+let panDrag = null
+profileCanvas.addEventListener('pointerdown', (e) => {
+  if (state.profileZoom <= 1) return
+  panDrag = { y: e.clientY, pan: state.profilePan }
+  try {
+    profileCanvas.setPointerCapture(e.pointerId)
+  } catch {
+    // 某些环境无活动指针，忽略即可（拖拽仍能工作）
+  }
+})
+profileCanvas.addEventListener('pointermove', (e) => {
+  if (!panDrag) return
+  const ih = profileCanvas.clientHeight - 12 - 26 // 与 drawProfile 的 padT/padB 一致
+  if (ih <= 0) return
+  // 拖多少像素 = 当前可视高程范围内多少米（由 drawProfile 记录）
+  const vr = state.profileVisRange ?? 1
+  state.profilePan = panDrag.pan + (e.clientY - panDrag.y) * (vr / ih)
+  drawProfile()
+})
+profileCanvas.addEventListener('pointerup', () => (panDrag = null))
+profileCanvas.addEventListener('pointercancel', () => (panDrag = null))
+
+// 面板高度拖拽
+let resizeDrag = null
+const profileResize = $('profileResize')
+profileResize.addEventListener('pointerdown', (e) => {
+  resizeDrag = true
+  profileResize.classList.add('active')
+  try {
+    profileResize.setPointerCapture(e.pointerId)
+  } catch {
+    // 同上
+  }
+})
+profileResize.addEventListener('pointermove', (e) => {
+  if (!resizeDrag) return
+  const panel = $('profilePanel')
+  const newH = Math.max(140, Math.min(window.innerHeight * 0.7, window.innerHeight - e.clientY))
+  panel.style.height = `${newH}px`
+})
+profileResize.addEventListener('pointerup', () => {
+  resizeDrag = false
+  profileResize.classList.remove('active')
 })
 
 // ---------- UI 事件 ----------
@@ -520,6 +605,9 @@ $('profileMode').addEventListener('click', (e) => {
 $('clearProfile').addEventListener('click', () => {
   state.profileA = null
   state.profileB = null
+  state.profileZoom = 1
+  state.profilePan = 0
+  updateZoomLabel()
   buildProfileLine3d()
   draw2d()
   drawProfile()

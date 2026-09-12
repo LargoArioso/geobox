@@ -77,7 +77,7 @@ input[type="range"] { width: 130px; accent-color: var(--ink); }
 /* ---------- 主视图 ---------- */
 #stage { flex: 1; display: flex; min-height: 0; }
 
-#view3d { flex: 1.25; position: relative; background: linear-gradient(#eef4f8, #faf8f4); min-width: 0; }
+#view3d { flex: 1.25; position: relative; background: linear-gradient(#eef4f8, #faf8f4); min-width: 0; min-height: 0; overflow: hidden; }
 #view3d canvas { display: block; }
 
 #view2d {
@@ -86,6 +86,7 @@ input[type="range"] { width: 130px; accent-color: var(--ink); }
   border-left: 1px solid var(--ink-10);
   background: #fff;
   min-width: 0;
+  min-height: 0;
 }
 #map2d {
   position: absolute;
@@ -137,14 +138,43 @@ input[type="range"] { width: 130px; accent-color: var(--ink); }
   display: none;
 }
 
-/* ---------- 剖面面板 ---------- */
+/* ---------- 剖面面板（可拖拽调整高度 + 垂直缩放） ---------- */
 #profilePanel {
   height: 200px;
+  max-height: 70vh;
   border-top: 1px solid var(--ink-10);
   background: #fff;
   display: flex;
   flex-direction: column;
   position: relative;
+  flex-shrink: 0;
+}
+
+.profile-resize {
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  cursor: ns-resize;
+  z-index: 6;
+  touch-action: none;
+}
+.profile-resize::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ink-10);
+  transition: background 0.15s;
+}
+.profile-resize:hover::after,
+.profile-resize.active::after {
+  background: var(--ink-50);
 }
 
 .profile-head {
@@ -155,7 +185,21 @@ input[type="range"] { width: 130px; accent-color: var(--ink); }
 }
 .profile-head .view-tag { position: static; }
 #profileInfo { font-family: var(--mono); font-size: 12px; color: var(--ink-50); flex: 1; }
-#profileCanvas { flex: 1; width: 100%; }
+
+.profile-zoom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
+}
+#zoomVal { min-width: 34px; text-align: center; }
+
+/* min-height:0 关键：否则 flex 子项最小高度等于 canvas 固有高度，
+   JS 写 canvas.height 会反过来撑大面板形成反馈回路，剖面图被顶出视口 */
+#profileCanvas { flex: 1; width: 100%; min-height: 0; touch-action: none; }
+#profilePanel { overflow: hidden; }
 
 @media (max-width: 900px) {
   #stage { flex-direction: column; }

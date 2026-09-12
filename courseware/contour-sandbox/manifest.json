@@ -2,7 +2,7 @@
   "id": "contour-sandbox",
   "name": "等高线 3D 沙盘",
   "author": "GeoBox 官方",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "subject": "地理",
   "tags": ["等高线", "地形", "预置", "初中", "高中"],
   "entry": "index.html",
