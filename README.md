@@ -69,3 +69,16 @@ await window.geobox.exit()
 - [ ] P4 云端社区（另立项）
 
 详见 [架构方案与路线图.md](./架构方案与路线图.md)
+
+## 致谢与第三方素材
+
+| 素材/库 | 用途 | 许可证 |
+|---|---|---|
+| [three.js](https://threejs.org) | 3D 课件渲染运行时 | MIT |
+| [Natural Earth](https://www.naturalearthdata.com) | 时区换算器的世界地图与时区边界数据 | 公有领域 |
+| NASA Visible Earth（地球贴图） | 晨昏线示意的地球表面纹理 | 公有领域 |
+| [Kenney Scribble Platformer](https://kenney.nl) | 水循环课件的手绘风植被/云/水素材 | CC0 |
+
+## 许可证
+
+[MIT](./LICENSE) © 2026 LargoArioso —— 个人学习项目，欢迎试用与反馈。
