@@ -11,6 +11,10 @@
 
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 
+  // 动画时长(ms)。按时间而非帧数推进:低配教室机掉帧时,动画只会变糙,不会被拖成十几秒
+  const REVEAL_MS = 1600
+  const BOUNDARY_MS = 1200
+
   function createMap(canvas, hooks = {}) {
     const ctx = canvas.getContext('2d')
     const reduced = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -27,6 +31,8 @@
     let phase = 'observe'
     let revealT = 1        // 级联点亮进度 0→1
     let boundaryT = 1      // 板块边界绘出进度 0→1
+    let revealT0 = 0       // 两个动画的起始时刻(performance.now)
+    let boundaryT0 = 0
     let pickHandler = null
 
     // ---------- 底图 ----------
@@ -84,14 +90,15 @@
       sctx.fillRect(x1, y1, x2 - x1, y2 - y1)
     }
 
-    /** 逐段画经纬折线;跳过跨 ±180° 经线的段(防横穿图幅) */
+    /** 逐段画经纬折线;跨 ±180° 经线处抬笔,防止折线横穿整幅图 */
     function strokePath(c, coords) {
-      let started = false
+      let prevLon = null
       for (const [lon, lat] of coords) {
-        if (started && Math.abs(lon - started[0]) > 180) started = false // 跨日界线,抬笔
         const [x, y] = lonLatToXY(lon, lat)
-        if (!started) { c.moveTo(x, y); started = [lon, lat] }
+        // 与「前一个点」比较:相邻两点经度跳变超过 180° 只可能是绕过了日界线
+        if (prevLon === null || Math.abs(lon - prevLon) > 180) c.moveTo(x, y)
         else c.lineTo(x, y)
+        prevLon = lon
       }
     }
 
@@ -219,9 +226,9 @@
         }
         staticDirty = true
       }
-      // 动画进度推进
-      if (revealT < 1) { revealT = Math.min(1, revealT + 1 / 72); staticDirty = true }
-      if (boundaryT < 1) { boundaryT = Math.min(1, boundaryT + 1 / 72); staticDirty = true }
+      // 动画进度推进(按墙上时间)
+      if (revealT < 1) { revealT = clamp((now - revealT0) / REVEAL_MS, 0, 1); staticDirty = true }
+      if (boundaryT < 1) { boundaryT = clamp((now - boundaryT0) / BOUNDARY_MS, 0, 1); staticDirty = true }
 
       if (staticDirty) renderStatic()
       ctx.clearRect(0, 0, W, H)
@@ -351,10 +358,12 @@
       },
       revealAnimated() {
         revealT = reduced ? 1 : 0
+        revealT0 = performance.now()
         staticDirty = true
       },
       drawBoundariesAnimated() {
         boundaryT = reduced ? 1 : 0
+        boundaryT0 = performance.now()
         staticDirty = true
       },
       onPick(cb) { pickHandler = cb },

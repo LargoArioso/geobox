@@ -38,7 +38,7 @@
 ## 三、数据策略(真实 + 离线兜底)
 
 - **实时源**:USGS Earthquake Hazards Program 官方 GeoJSON feed(免费、无需 API key、分钟级更新,全球含中国);三档:过去 24 小时 / 7 天 / 30 天
-- **板块边界**:PB2002 板块边界数据(Bird 2003,学术界标准),内置为精简 GeoJSON
+- **板块边界**:PB2002 板块边界数据(Bird 2003,学术界标准),内置为精简 GeoJSON(`plates.min.geojson`,渲染用,单色);边界类型(消亡/生长/转换)不在这份文件里——其 `LAYER` 属性是常量,实际类型只在同数据集的 `PB2002_steps.json`(`STEPCLASS` 字段)里,故额外内置 `plate-steps.json`(分段中点采样)供详情卡按最近点查类型
 - **离线兜底(硬需求,希沃白板常断网)**:
   - 包内置一份近 30 天真实地震快照(打包时抓取)
   - USGS 拉取成功 → 覆盖并通过 `window.geobox.storage` 持久化缓存;拉取失败 → 回退到上次缓存,再退到内置快照

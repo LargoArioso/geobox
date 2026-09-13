@@ -7,6 +7,11 @@ const OUT = join(__dirname, '..', 'courseware', 'earthquake-live', 'data')
 const USGS_MONTH = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson'
 // PB2002 板块边界(Bird 2003)的 GeoJSON 镜像,公有领域
 const PB2002 = 'https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json'
+// 同一数据集的「分段」文件:boundaries 里的 LAYER 是常量,真正的边界类型(俯冲/洋中脊/转换断层)只在 steps 的 STEPCLASS 里
+const PB2002_STEPS = 'https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_steps.json'
+
+// Bird 2003 的边界类型码
+const STEP_CLASSES = new Set(['SUB', 'OSR', 'OTF', 'OCB', 'CTF', 'CRB', 'CCB'])
 
 function slimQuake(f) {
   const p = f?.properties ?? {}
@@ -17,6 +22,15 @@ function slimQuake(f) {
   return { id: String(f.id ?? ''), mag: p.mag, place: String(p.place ?? ''), time: p.time ?? 0, lon, lat, depth, tsunami: p.tsunami ?? 0 }
 }
 
+/** PB2002 分段 → 中点 + 类型码。整条折线没必要留,查「最近边界类型」只需要采样点 */
+function slimStep(f) {
+  const p = f?.properties ?? {}
+  const { STARTLONG: a, STARTLAT: b, FINALLONG: c, FINALLAT: d } = p
+  if ([a, b, c, d].some((v) => typeof v !== 'number')) return null
+  if (!STEP_CLASSES.has(p.STEPCLASS)) return null
+  return { lon: +(((a + c) / 2).toFixed(3)), lat: +(((b + d) / 2).toFixed(3)), c: p.STEPCLASS }
+}
+
 function validateSnapshot(s) {
   return !!s && typeof s.fetchedAt === 'number' && Array.isArray(s.quakes) && s.quakes.length > 0
     && s.quakes.every((q) => typeof q.lon === 'number' && typeof q.lat === 'number' && typeof q.mag === 'number')
@@ -24,6 +38,10 @@ function validateSnapshot(s) {
 function validatePlates(g) {
   return !!g && g.type === 'FeatureCollection' && Array.isArray(g.features) && g.features.length > 0
     && g.features.every((f) => f.geometry && Array.isArray(f.geometry.coordinates))
+}
+function validatePlateSteps(d) {
+  return !!d && Array.isArray(d.steps) && d.steps.length >= 100
+    && d.steps.every((s) => typeof s.lon === 'number' && typeof s.lat === 'number' && STEP_CLASSES.has(s.c))
 }
 function validateChinaBelts(d) {
   return !!d && Array.isArray(d.belts) && d.belts.length > 0
@@ -57,7 +75,17 @@ async function main() {
   if (!validatePlates(plates)) throw new Error('板块边界校验失败')
   writeFileSync(join(OUT, 'plates.min.geojson'), JSON.stringify(plates))
   console.log(`[fetch-data] 板块边界 ${plates.features.length} 条`)
+
+  // 3) PB2002 分段类型:供详情卡回答「这次地震靠近哪种板块边界」
+  const res3 = await fetch(PB2002_STEPS)
+  if (!res3.ok) throw new Error(`PB2002 steps HTTP ${res3.status}`)
+  const rawSteps = await res3.json()
+  const steps = rawSteps.features.map(slimStep).filter(Boolean)
+  const stepData = { note: 'PB2002 (Bird 2003) 分段边界类型', steps }
+  if (!validatePlateSteps(stepData)) throw new Error('板块分段类型校验失败')
+  writeFileSync(join(OUT, 'plate-steps.json'), JSON.stringify(stepData))
+  console.log(`[fetch-data] 板块分段 ${steps.length} 段`)
 }
 
 if (require.main === module) main().catch((e) => { console.error(e); process.exit(1) })
-module.exports = { slimQuake, validateSnapshot, validatePlates, validateChinaBelts }
+module.exports = { slimQuake, slimStep, validateSnapshot, validatePlates, validatePlateSteps, validateChinaBelts }

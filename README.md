@@ -9,7 +9,7 @@
 - 💾 **本地优先**：SQLite 存储课件库，架构预留云端 API 抽象层（社区功能后置）
 - 🔗 **单文件分享**：导出 `.gpak`，双击即导入另一台电脑
 
-## 内置课件（4 个，开机即用）
+## 内置课件（5 个，开机即用）
 
 | 课件 | 内容 |
 |---|---|
@@ -17,6 +17,7 @@
 | 晨昏线示意 | 地球自转公转 · 晨昏圈摆动 · 侧视/极地俯视双视角 · 真实地球贴图 |
 | 时区换算器 | Natural Earth 真实时区边界地图 · 点击城市换算区时 · 日界线演示 |
 | 水循环动态示意图 | 三种水循环类型切换 · 粒子流动画 · 环节逻辑关系图联动高亮 |
+| 全球地震带·实时分布 | USGS 实时地震数据（离线快照兜底）· 2D/3D 双视图 · 板块边界叠加 · 四环节教学引导 |
 
 另内置课程标准要点等教学资料（「资料」页），支持上传自己的电子教材。
 
@@ -78,6 +79,8 @@ await window.geobox.exit()
 | [Natural Earth](https://www.naturalearthdata.com) | 时区换算器的世界地图与时区边界数据 | 公有领域 |
 | NASA Visible Earth（地球贴图） | 晨昏线示意的地球表面纹理 | 公有领域 |
 | [Kenney Scribble Platformer](https://kenney.nl) | 水循环课件的手绘风植被/云/水素材 | CC0 |
+| [USGS Earthquake Hazards Program](https://earthquake.usgs.gov) | 地震带课件的实时/快照地震数据 | 公有领域 |
+| PB2002 板块边界（Bird 2003 / [fraxen GeoJSON 镜像](https://github.com/fraxen/tectonicplates)） | 地震带课件的板块边界与边界类型 | 公有领域 |
 
 ## 许可证
 

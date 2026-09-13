@@ -614,7 +614,7 @@ git commit -m "feat(earthquake): 四环节状态机 + 最近地震滚动条"
 - Consumes: `Quake`(Task 1)
 - Produces: ES module 默认导出 `createGlobe(container)` → `{ setQuakes(list), show(), hide(), enabled }`;WebGL 不可用时 `enabled=false`,app.js 据此隐藏 `#viewToggle`
 
-- [ ] **Step 1: 复制贴图 + 更新 copy-three.js + 生成运行时**
+- [x] **Step 1: 复制贴图 + 更新 copy-three.js + 生成运行时**
 
 ```bash
 cp courseware/earth-terminator/assets/earth.jpg courseware/earthquake-live/assets/earth.jpg
@@ -622,7 +622,7 @@ cp courseware/earth-terminator/assets/earth.jpg courseware/earthquake-live/asset
 node scripts/copy-three.js
 ```
 
-- [ ] **Step 2: 实现 globe.js**
+- [x] **Step 2: 实现 globe.js**
 
 要点(完整实现,约 200 行):
 - `import * as THREE from '../assets/three.module.min.js'` + OrbitControls
@@ -633,11 +633,11 @@ node scripts/copy-three.js
 - 切换:`show()` 恢复渲染循环,`hide()` 停止循环省电;2D↔3D 切换时容器 400ms 淡入淡出
 - WebGL 检测:`try{ new THREE.WebGLRenderer() }catch{ enabled=false }`
 
-- [ ] **Step 3: 截图验证(软件渲染)**
+- [x] **Step 3: 截图验证(软件渲染)**
 
 用 `_shot.js` 模式 + `SHOT_DISABLE_GPU=1` 截图,确认地球贴图、地震点、自转首帧正常。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add courseware/earthquake-live/js/globe.js courseware/earthquake-live/assets/earth.jpg scripts/copy-three.js
@@ -655,7 +655,7 @@ git commit -m "feat(earthquake): 3D地球视图 — 惯性自转/阻尼交互/Po
 - Consumes: `QuakeData.loadQuakes`、`QuakeMap.createMap`、`QuakePhases.createPhases`、`globe.js` 默认导出
 - Produces: 无(顶层装配)
 
-- [ ] **Step 1: 实现 app.js**
+- [x] **Step 1: 实现 app.js**
 
 装配顺序:
 1. 取 DOM 引用(Task 2 契约)
@@ -667,7 +667,7 @@ git commit -m "feat(earthquake): 3D地球视图 — 惯性自转/阻尼交互/Po
 7. `map.onPick` / globe `onPick` → 渲染 `#detail` 卡:震级大字(按三色)、地点、发震时刻(本地时区)、震源深度 km、距参考点距离(选做,若复杂则省略)、所在板块边界类型(cause 环节时显示,从最近 boundary feature 的 LAYER 推断,允许显示"—");点击空白处隐藏
 8. 全部异步失败路径静默降级,不弹窗
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add courseware/earthquake-live/js/app.js
@@ -682,7 +682,7 @@ git commit -m "feat(earthquake): 装配层 — 数据加载/环节联动/详情�
 - Modify: `README.md`(内置课件表 + 致谢表)
 - Modify: `docs/superpowers/specs/2026-09-13-earthquake-live-design.md`(如有实现偏差,回写)
 
-- [ ] **Step 1: 全量截图走查(`_shot.js` 模式,逐场景)**
+- [x] **Step 1: 全量截图走查(`_shot.js` 模式,逐场景)**
 
 覆盖清单(对应设计文档 §八 验收):
 1. observe 环节(week,有网)→ 快照
@@ -694,19 +694,19 @@ git commit -m "feat(earthquake): 装配层 — 数据加载/环节联动/详情�
 7. 触控模拟:点击已知地震坐标,确认详情卡弹出
 8. `prefers-reduced-motion` 模拟:确认无动画直接终态
 
-- [ ] **Step 2: README 更新**
+- [x] **Step 2: README 更新**
 
 内置课件表加一行:`| 全球地震带·实时分布 | USGS 实时地震数据(离线快照兜底) · 2D/3D 双视图 · 板块边界叠加 · 四环节教学引导 |`
 致谢表加两行:USGS Earthquake Hazards Program(地震数据,公有领域)、PB2002 板块边界(Bird 2003 / fraxen GeoJSON 镜像,公有领域)。
 
-- [ ] **Step 3: 最终 Commit**
+- [x] **Step 3: 最终 Commit**
 
 ```bash
 git add README.md docs/ courseware/earthquake-live/
 git commit -m "feat(earthquake): 预置课件「全球地震带·实时分布」完成 — 四环节/双视图/三级数据回退"
 ```
 
-- [ ] **Step 4: 推送**
+- [x] **Step 4: 推送**
 
 ```bash
 git push origin main   # 网络抖动时重试数次
