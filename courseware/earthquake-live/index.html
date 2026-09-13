@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>全球地震带·实时分布</title>
 <link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+  { "imports": { "three": "./assets/three.module.min.js" } }
+</script>
 </head>
 <body>
   <header id="topbar">
@@ -44,7 +47,7 @@
   <script src="js/data.js"></script>
   <script src="js/map.js"></script>
   <script src="js/phases.js"></script>
-  <script type="module" src="js/globe.js"></script>
+  <!-- js/globe.js 由 app.js 在首次切到 3D 时动态 import,避免开场就拖 670KB three 运行时 -->
   <script src="js/app.js"></script>
 </body>
 </html>
