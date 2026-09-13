@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全球地震带·实时分布</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="topbar">
+    <h1>全球地震带·实时分布</h1>
+    <nav id="phaseTabs" aria-label="教学环节">
+      <button data-phase="observe" class="active">① 观察</button>
+      <button data-phase="pattern">② 规律</button>
+      <button data-phase="cause">③ 成因</button>
+      <button data-phase="safety">④ 防震</button>
+    </nav>
+    <div id="controls">
+      <div id="rangeBtns" role="group" aria-label="时间范围">
+        <button data-range="day">24小时</button>
+        <button data-range="week" class="active">7天</button>
+        <button data-range="month">30天</button>
+      </div>
+      <button id="viewToggle" aria-label="切换三维地球">🌐 3D</button>
+    </div>
+  </header>
+
+  <div id="ticker" aria-live="off"><span id="tickerText"></span></div>
+
+  <main id="stage">
+    <canvas id="mapCanvas"></canvas>
+    <div id="globeBox" hidden></div>
+    <div id="detail" hidden></div>
+    <div id="caption"></div>
+    <div id="legend">
+      <span><i class="dot" style="background:#d97706"></i>&lt;4.5级</span>
+      <span><i class="dot" style="background:#ea580c"></i>4.5–6级</span>
+      <span><i class="dot" style="background:#dc2626"></i>≥6级</span>
+      <span class="ripple-hint"><i class="ring"></i>最新地震</span>
+    </div>
+    <div id="badge">数据来源 …</div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/phases.js"></script>
+  <script type="module" src="js/globe.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

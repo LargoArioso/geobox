@@ -1,0 +1,10 @@
+{
+  "id": "earthquake-live",
+  "name": "全球地震带·实时分布",
+  "author": "GeoBox 官方",
+  "version": "1.0.0",
+  "subject": "地理",
+  "tags": ["地震", "板块构造", "自然灾害", "实时数据", "预置", "高中"],
+  "entry": "index.html",
+  "permissions": []
+}
