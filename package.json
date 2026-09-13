@@ -1,8 +1,9 @@
 {
   "name": "geobox",
   "productName": "GeoBox 地理课件舱",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "地理交互式可视化课件运行时与课件库管理器（Windows / 希沃白板）",
+  "author": "LargoArioso",
   "license": "MIT",
   "private": true,
   "main": "out/main/index.js",
